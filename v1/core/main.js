@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-//	Copyright (C) Hiroshi SUGIMURA 2018.03.16
+//	Copyright (C) Hiroshi SUGIMURA 2020.08.12
 //////////////////////////////////////////////////////////////////////
 'use strict'
 
@@ -37,6 +37,7 @@ if (fs.existsSync(configFile)) {
 	config = JSON.parse( fs.readFileSync( configFile, 'utf8') );
 }
 
+
 //////////////////////////////////////////////////////////////////////
 // local function
 //////////////////////////////////////////////////////////////////////
@@ -54,55 +55,18 @@ ipcMain.on('to-main', function(event, arg) {
 
 
 //////////////////////////////////////////////////////////////////////
-// PicoGW = Minimalist's Home Gateway
-const controller = require('./node_modules/picogw/lib/controller');
-const PubSub = require('./node_modules/picogw/lib/pub-sub').PubSub;
-const log = console.log;
+// elemuのサーバとオブジェクトを作る
+const ELEmu = require('./elemu.js');
+let options = {
+	'console-packet': false
+};
+mEmulator = new ELEmu(options);
+mEmulator.init();
 
-const package_json = require('./node_modules/picogw/package.json');
-log(`PicoGW \u001b[31mv${package_json.version}\u001b[0m`);
 
-// Support for termux
-if (process.platform == 'android') {
-    Object.defineProperty(process, 'platform', {get: function() {
-        return 'linux';
-    }});
-}
 
-// Parse command line
-let cmdOpts = require('opts');
-cmdOpts.parse([
-    {
-        'short': 'c',
-        'long': 'config',
-        'description': 'Path of config file.'
-            + ' The default is "config.json" in $HOME/.picogw/config.json or ./config.json', // eslint-disable-line max-len
-        'value': true,
-        'required': false,
-    },
-    {
-        'short': 'p',
-        'long': 'port',
-        'description': 'Web API port number. The default is 8080.',
-        'value': true,
-        'required': false,
-    },
-    {
-        'long': 'pipe',
-        'description': 'Path of named pipes without postfix (_r or _w).'
-            + ' The server is blocked until the pipe client is connected.',
-        'value': true,
-        'required': false,
-    },
-], true);
+log('ELemu beggins.');
 
-controller.init({PubSub: PubSub, cmd_opts: cmdOpts}).then((re)=>{
-    log('Plugins have been initialized.');
-}).catch((e) => {
-    console.error(e);
-});
-
-log('PicoGW started.');
 
 //////////////////////////////////////////////////////////////////////
 // foreground
@@ -112,7 +76,7 @@ function createWindow() {
 	});
 	// mainWindow.setMenu(null);
 	menuInitialize();
-	mainWindow.loadURL('http://localhost:8080/index.html');
+	mainWindow.loadURL('http://localhost:8880/');
 
 	if (isDevelopment) { // 開発モードならDebugGUIひらく
 		mainWindow.webContents.openDevTools()

@@ -19,7 +19,7 @@ const mHttpServer = require('./lib/HttpServer.js');
 const mDeviceDescription = require('./lib/DeviceDescription.js');
 const mManufacturerTable = require('./lib/ManufacturerTable.js');
 const mUserConf = require('./lib/UserConf.js');
-const mConsole = require('./lib/Console.js');
+const mConsole = require('./lib/Con170951sole.js');
 
 /* ------------------------------------------------------------------
 * Constructor
@@ -252,6 +252,6 @@ process.argv.forEach((opt) => {
 		options[k] = false;
 	}
 });
-// EL エミュレーター起動
-let mEmulator = new Emulator(options);
-mEmulator.init();
+
+
+module.exports = HttpServer;
