@@ -19,7 +19,7 @@ const mHttpServer = require('./lib/HttpServer.js');
 const mDeviceDescription = require('./lib/DeviceDescription.js');
 const mManufacturerTable = require('./lib/ManufacturerTable.js');
 const mUserConf = require('./lib/UserConf.js');
-const mConsole = require('./lib/Con170951sole.js');
+const mConsole = require('./lib/Console.js');
 
 /* ------------------------------------------------------------------
 * Constructor
@@ -228,30 +228,4 @@ Emulator.prototype._updatedUserConf = function (user_conf) {
 };
 
 
-
-/* ------------------------------------------------------------------
-* コマンドラインオプション
-* --enable-console-packet:
-*     パケット送受信出力を有効にする
-* ---------------------------------------------------------------- */
-let options = {
-	'console-packet': false
-};
-process.argv.forEach((opt) => {
-	if (!/^\-\-/.test(opt)) {
-		return;
-	}
-	let k = opt.replace(/^\-\-(enable|disable)\-/, '');
-	if (!(k in options)) {
-		console.error('Unknown command line switch: ' + opt);
-		process.exit();
-	}
-	if (/^\-\-enable/.test(opt)) {
-		options[k] = true;
-	} else if (/^\-\-disable/.test(opt)) {
-		options[k] = false;
-	}
-});
-
-
-module.exports = HttpServer;
+module.exports = Emulator;

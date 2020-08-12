@@ -60,12 +60,32 @@ const ELEmu = require('./elemu.js');
 let options = {
 	'console-packet': false
 };
-mEmulator = new ELEmu(options);
+
+/* ------------------------------------------------------------------
+ * コマンドラインオプション
+ * --enable-console-packet:
+ *     パケット送受信出力を有効にする
+ * ---------------------------------------------------------------- */
+process.argv.forEach((opt) => {
+	if (!/^\-\-/.test(opt)) {
+		return;
+	}
+	let k = opt.replace(/^\-\-(enable|disable)\-/, '');
+	if (!(k in options)) {
+		console.error('Unknown command line switch: ' + opt);
+		process.exit();
+	}
+	if (/^\-\-enable/.test(opt)) {
+		options[k] = true;
+	} else if (/^\-\-disable/.test(opt)) {
+		options[k] = false;
+	}
+});
+let mEmulator = new ELEmu(options);
 mEmulator.init();
 
 
-
-log('ELemu beggins.');
+console.log('ELDeviceEmulator beggins.');
 
 
 //////////////////////////////////////////////////////////////////////
