@@ -1,0 +1,45 @@
+{
+	"name": "HEMS-Logger",
+	"version": "0.0.5",
+	"description": "This app is HEMS logger.",
+	"author": "sugilab",
+	"main": "main.js",
+	"scripts": {
+		"win": "set    NODE_ENV=development && electron .",
+		"mac": "export NODE_ENV=development && electron --disable-gpu .",
+		"pico": "node ./node_modules/picogw/main.js",
+		"postinstall": "electron-builder install-app-deps"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"electron": "^9.1.1"
+	},
+	"dependencies": {
+		"picogw": "^3.9.1"
+	},
+	"build": {
+		"appId": "net.sugimulab.HEMS-Logger",
+		"extraResources": [
+			{
+				"from": "./extraResources/",
+				"to": "extraResources",
+				"filter": [
+					"**/*"
+				]
+			}
+		],
+		"win": {
+			"icon": "icons/H_pink.ico",
+			"target": "nsis"
+		},
+		"mac": {
+			"icon": "icons/homeele.icns"
+		},
+		"directories": {
+			"output": "../dist"
+		}
+	},
+	"files": [
+		"icons/*"
+	]
+}

@@ -1,0 +1,15 @@
+{
+	"name": "HEMS-Logger",
+	"version": "0.0.1",
+	"description": "sample",
+	"scripts": {
+		"win": "set    NODE_ENV=development && electron ./core",
+		"mac": "export NODE_ENV=development && electron ./core",
+		"build-win": "electron-builder --project ./core --win --x64",
+		"build-mac": "electron-builder --project ./core --mac --x64",
+		"postinstall": "electron-builder install-app-deps"
+	},
+	"author": "sugimura lab.",
+	"license": "MIT",
+	"private": true
+}
