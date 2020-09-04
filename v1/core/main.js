@@ -4,11 +4,13 @@
 'use strict'
 
 // app frame config
-const appname = 'HEMS-Logger';
+const appname = 'ELDeviceEmulator';
 
 //////////////////////////////////////////////////////////////////////
 // 基本ライブラリ
 const {app, BrowserWindow, ipcMain, Menu, shell} = require('electron');
+const {default: installExtension, VUEJS_DEVTOOLS } = require("electron-devtools-installer");
+
 const path = require('path');
 const util = require('util');
 const os  = require('os');
@@ -57,31 +59,7 @@ ipcMain.on('to-main', function(event, arg) {
 //////////////////////////////////////////////////////////////////////
 // elemuのサーバとオブジェクトを作る
 const ELEmu = require('./elemu.js');
-let options = {
-	'console-packet': false
-};
-
-/* ------------------------------------------------------------------
- * コマンドラインオプション
- * --enable-console-packet:
- *     パケット送受信出力を有効にする
- * ---------------------------------------------------------------- */
-process.argv.forEach((opt) => {
-	if (!/^\-\-/.test(opt)) {
-		return;
-	}
-	let k = opt.replace(/^\-\-(enable|disable)\-/, '');
-	if (!(k in options)) {
-		console.error('Unknown command line switch: ' + opt);
-		process.exit();
-	}
-	if (/^\-\-enable/.test(opt)) {
-		options[k] = true;
-	} else if (/^\-\-disable/.test(opt)) {
-		options[k] = false;
-	}
-});
-let mEmulator = new ELEmu(options);
+let mEmulator = new ELEmu();
 mEmulator.init();
 
 
@@ -89,17 +67,43 @@ console.log('ELDeviceEmulator beggins.');
 
 
 //////////////////////////////////////////////////////////////////////
+// Communication for Electron's Renderer process
+//////////////////////////////////////////////////////////////////////
+// IPC 受信から非同期で実行
+ipcMain.on('to-main', function(event, arg) {
+	// メッセージが来たとき
+	console.log( '---  sended from Renderer.' );
+	console.log(arg);
+
+	let c = JSON.parse(arg);
+
+	switch ( c.cmd ) {
+	case "already": // 準備出来たらRenderer更新して，INF
+		break;
+
+	default:
+		console.log( "## get error cmd : " + arg );
+		break;
+	}
+});
+
+
+
+//////////////////////////////////////////////////////////////////////
 // foreground
 function createWindow() {
+
 	mainWindow = new BrowserWindow({width: 1024, height: 768,
-	  webPreferences: { nodeIntegration: false }
-	});
+									webPreferences: { nodeIntegration: false, worldSafeExecuteJavaScript: true, preload:'http://localhost:8880/elemu.js' }
+								   });
 	// mainWindow.setMenu(null);
 	menuInitialize();
 	mainWindow.loadURL('http://localhost:8880/');
 
+
 	if (isDevelopment) { // 開発モードならDebugGUIひらく
-		mainWindow.webContents.openDevTools()
+		mainWindow.webContents.openDevTools();
+		require('vue-devtools').install();
 	}
 
 	mainWindow.on('closed', () => {
@@ -127,39 +131,39 @@ app.on('window-all-closed', () => {
 // menu
 const menuItems = [
 	{
-	  label: 'Electron',
-	  submenu: [
-		  {
-			label: 'Preferences...',
-			accelerator: 'Command+,',
-			click: function() { shell.showItemInFolder(configDir); }
-		  },
-		  {
-			label: 'Quit',
-			accelerator: 'Command+Q',
-			click: function() { app.quit(); }
-		  }]
-  }, {
-	  label: 'View',
-	  submenu: [
-		  {
-			label: 'Reload',
-			accelerator: 'Command+R',
-			  click(item, focusedWindow){
-				  if(focusedWindow) focusedWindow.reload()
-			  }
-		  },
-		  {
-			label: 'Toggle Full Screen',
-			accelerator: 'Ctrl+Command+F',
-			click: function() { mainWindow.setFullScreen(!mainWindow.isFullScreen()); }
-		  },
-		  {
-			label: 'Toggle Developer Tools',
-			accelerator: 'Alt+Command+I',
-			click: function() { mainWindow.toggleDevTools(); }
-		  }
-] } ];
+		label: 'Electron',
+		submenu: [
+			{
+				label: 'Preferences...',
+				accelerator: 'Command+,',
+				click: function() { shell.showItemInFolder(configDir); }
+			},
+			{
+				label: 'Quit',
+				accelerator: 'Command+Q',
+				click: function() { app.quit(); }
+			}]
+	}, {
+		label: 'View',
+		submenu: [
+			{
+				label: 'Reload',
+				accelerator: 'Command+R',
+				click(item, focusedWindow){
+					if(focusedWindow) focusedWindow.reload()
+				}
+			},
+			{
+				label: 'Toggle Full Screen',
+				accelerator: 'Ctrl+Command+F',
+				click: function() { mainWindow.setFullScreen(!mainWindow.isFullScreen()); }
+			},
+			{
+				label: 'Toggle Developer Tools',
+				accelerator: 'Alt+Command+I',
+				click: function() { mainWindow.toggleDevTools(); }
+			}
+		] } ];
 
 
 function menuInitialize() {

@@ -1,5 +1,15 @@
 # ELDeviceEmulator
 
+mac, winは勝手に読み替えて
+
+# 本体を直接実行
+
+```v1/core```以下で，```npm run mac```
+
+
+# build
+
+```v1```以下で，```npm run build-mac```
 
 
 # 大元

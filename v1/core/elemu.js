@@ -24,11 +24,8 @@ const mConsole = require('./lib/Console.js');
 /* ------------------------------------------------------------------
 * Constructor
 * ---------------------------------------------------------------- */
-const Emulator = function (options) {
+const Emulator = function () {
 	this._conf = require('./conf/config.js');
-	for (let k in options) {
-		this._conf[k] = options[k];
-	}
 
 	this._device = null;
 	this._api = null;

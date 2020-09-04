@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 
-<head>
+  <head>
 	<meta charset="utf-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-inline' 'unsafe-eval';" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<title>ECHONET Lite Emulator</title>
-	<link rel="stylesheet" href="/lib/bootstrap/css/bootstrap.min.css">
-	<link rel="stylesheet" href="/lib/fontawesome-free/css/all.css">
-	<link rel="stylesheet" href="elemu.css">
+	<link rel="stylesheet" type="text/css" href="./lib/bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="./lib/fontawesome-free/css/all.css">
+	<link rel="stylesheet" type="text/css" href="./elemu.css">
 </head>
 
 <body>
@@ -69,17 +70,17 @@
 	</div>
 
 	<!-- Bootstrap -->
-	<script src="/lib/jquery-3.3.1.min.js"></script>
-	<script src="/lib/popper.min.js"></script>
-	<script src="/lib/bootstrap/js/bootstrap.min.js"></script>
+	<script src="./lib/jquery-3.3.1.min.js"></script>
+	<script src="./lib/popper.min.js"></script>
+	<script src="./lib/bootstrap/js/bootstrap.min.js"></script>
 	<!-- Vue.js -->
 	<!--<script src="/lib/vue.min.js"></script>-->
-	<script src="/lib/vue.js"></script>
-	<script src="/lib/vue-router.min.js"></script>
+	<script src="./lib/vue.js"></script>
+	<script src="./lib/vue-router.min.js"></script>
 	<!-- El Emulator -->
-	<script src="/elemu-bootstrap-utils.js"></script>
-	<script src="/elemu-webapi.js"></script>
-	<script src="/elemu.js"></script>
+	<script src="./elemu-bootstrap-utils.js"></script>
+	<script src="./elemu-webapi.js"></script>
+	<script src="./elemu.js"></script>
 
 
 
@@ -978,7 +979,7 @@
 			<tr>
 				<th>DEOJ</th>
 				<td>
-					<code class="hex">{{ data.deoj.hex }}</code> | 
+					<code class="hex">{{ data.deoj.hex }}</code> |
 					<span v-if="lang === 'ja'">{{ data.deoj.className.ja }}</span>
 					<span v-if="lang === 'en'">{{ data.deoj.className.en }}</span>
 				</td>
@@ -986,7 +987,7 @@
 			<tr>
 				<th>ESV</th>
 				<td>
-					<code class="hex">{{ data.esv.hex }}</code> | 
+					<code class="hex">{{ data.esv.hex }}</code> |
 					{{ data.esv.serviceName }}
 				</td>
 			</tr>

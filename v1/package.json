@@ -1,15 +1,19 @@
 {
-	"name": "HEMS-Logger",
+	"name": "ELDeviceEmulator",
+	"version": "この値はあんまり意味ない",
 	"version": "0.0.1",
-	"description": "sample",
+	"description": "first of all",
 	"scripts": {
 		"win": "set    NODE_ENV=development && electron ./core",
 		"mac": "export NODE_ENV=development && electron ./core",
-		"build-win": "electron-builder --project ./core --win --x64",
-		"build-mac": "electron-builder --project ./core --mac --x64",
+		"build-win": "electron-builder --project ./core --win --x64 -c.electronVersion 10.1.1",
+		"build-mac": "electron-builder --project ./core --mac --x64 -c.electronVersion 10.1.1",
 		"postinstall": "electron-builder install-app-deps"
 	},
 	"author": "sugimura lab.",
 	"license": "MIT",
-	"private": true
+	"private": true,
+	"devDependencies": {
+		"electron": "^10.1.1"
+	}
 }
