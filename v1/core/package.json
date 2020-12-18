@@ -7,7 +7,6 @@
 	"scripts": {
 		"win": "set    NODE_ENV=development && electron .",
 		"mac": "export NODE_ENV=development && electron --disable-gpu .",
-		"pico": "node ./main.js",
 		"postinstall": "electron-builder install-app-deps"
 	},
 	"license": "MIT",
@@ -17,7 +16,6 @@
 	"dependencies": {
 		"electron-devtools-installer": "^3.1.1",
 		"express": "^4.17.1",
-		"picogw": "^3.9.1",
 		"vue-devtools": "^5.1.4",
 		"ws": "^7.3.1"
 	},

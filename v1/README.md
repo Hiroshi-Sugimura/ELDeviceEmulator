@@ -2,6 +2,12 @@
 
 # install
 
+まずはElectron-builderを入れておこう。
+```
+npm i -g electron-builder
+```
+
+
 - for mac
 
 ```
@@ -40,6 +46,13 @@ npm run pico
 ```
 
 # Packaging (Electron)
+
+```
+cd v1
+npm i
+```
+
+
 
 ```
 npm run build-win
