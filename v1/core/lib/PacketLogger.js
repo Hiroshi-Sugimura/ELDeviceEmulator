@@ -1,19 +1,19 @@
 /* ------------------------------------------------------------------
 * PacketLogger.js
-* パケット送受信データのロギングを扱うモジュール
-*
-* Date: 2018-09-08
+* パケット送受信データのロギングを扱うモジュール*
+**
+* Date: 2018-09-08*
 * ---------------------------------------------------------------- */
 'use strict';
 const mPath = require('path');
 const mFs = require('fs');
 
 /* ------------------------------------------------------------------
-* Constructor 
-* - conf              | object  | optional |
-*   - packet_log_days | integer | optional | ログ保存日数
+* Constructor
+* - conf              | object  | optional |*
+*   - packet_log_days | integer | optional | ログ保存日数*
 * ---------------------------------------------------------------- */
-const PacketLogger = function (conf) {
+const PacketLogger = function (conf, dir) {
 	if (!conf || typeof (conf) !== 'object') {
 		conf = {};
 	}
@@ -24,12 +24,16 @@ const PacketLogger = function (conf) {
 		this._log_days = log_days;
 	}
 	// ログファイル格納ディレクトリのパス
-	this._log_dir = mPath.resolve(__dirname, '../logs');
+	if( dir ) {
+		this._log_dir = dir;
+	}else{
+		this._log_dir = mPath.resolve(__dirname, '../logs');
+	}
 };
 
 /* ------------------------------------------------------------------
 * init()
-* 初期化
+* 初期化*
 * ---------------------------------------------------------------- */
 PacketLogger.prototype.init = function () {
 	if (!mFs.existsSync(this._log_dir)) {
@@ -46,7 +50,7 @@ PacketLogger.prototype.init = function () {
 
 /* ------------------------------------------------------------------
 * tx(address, parsed)
-* 送信ログ書き込み
+* 送信ログ書き込み*
 * ---------------------------------------------------------------- */
 PacketLogger.prototype.tx = function (address, parsed) {
 	this._log('tx', address, parsed);
@@ -54,7 +58,7 @@ PacketLogger.prototype.tx = function (address, parsed) {
 
 /* ------------------------------------------------------------------
 * rx(address, parsed)
-* 受信ログ書き込み
+* 受信ログ書き込み*
 * ---------------------------------------------------------------- */
 PacketLogger.prototype.rx = function (address, parsed) {
 	this._log('rx', address, parsed);
@@ -74,7 +78,7 @@ PacketLogger.prototype._log = function (direction, address, parsed) {
 		direction.toUpperCase(),
 		address,
 		parsed['result']
-	];
+		];
 	if (parsed['result'] === 0) {
 		log_cols.push('"' + parsed['data']['hex'] + '"');
 		log_cols.push('""');
@@ -94,10 +98,10 @@ PacketLogger.prototype._log = function (direction, address, parsed) {
 
 /* ------------------------------------------------------------------
 * txError(address, parsed)
-* 送信エラーログ書き込み
-*
-* - address   | 必須 | 送信パケットなら宛先の、受信パケットなら送信元の IP アドレス
-* - parsed    | 必須 | EL パケット解析済みオブジェクト
+* 送信エラーログ書き込み*
+**
+* - address   | 必須 | 送信パケットなら宛先の、受信パケットなら送信元の IP アドレス*
+* - parsed    | 必須 | EL パケット解析済みオブジェクト*
 * ---------------------------------------------------------------- */
 PacketLogger.prototype.txError = function (address, parsed) {
 	this._error('tx', address, parsed);
@@ -105,10 +109,10 @@ PacketLogger.prototype.txError = function (address, parsed) {
 
 /* ------------------------------------------------------------------
 * rxError(message, address, parsed)
-* 受信エラーログ書き込み
-*
-* - address   | 必須 | 送信パケットなら宛先の、受信パケットなら送信元の IP アドレス
-* - parsed    | 必須 | EL パケット解析済みオブジェクト
+* 受信エラーログ書き込み*
+**
+* - address   | 必須 | 送信パケットなら宛先の、受信パケットなら送信元の IP アドレス*
+* - parsed    | 必須 | EL パケット解析済みオブジェクト*
 * ---------------------------------------------------------------- */
 PacketLogger.prototype.rxError = function (address, parsed) {
 	this._error('rx', address, parsed);
@@ -128,7 +132,7 @@ PacketLogger.prototype._error = function (direction, address, parsed) {
 		direction.toUpperCase(),
 		address,
 		parsed['result']
-	];
+		];
 
 	log_cols.push('"' + parsed['hex'] + '"');
 	log_cols.push('"' + parsed['message'] + '"');

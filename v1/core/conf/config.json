@@ -1,0 +1,16 @@
+{
+	"dashboard_port": 8880,
+	"dashboard_timeout_sec": 30,
+	"lang": "ja",
+	"ip_address_version": 4,
+	"packet_log": true,
+	"packet_log_days": 3,
+	"multicast_response_wait_min_msec": 100,
+	"multicast_response_wait_max_msec": 1000,
+	"get_res_wait_msec": 100,
+	"set_res_wait_msec": 100,
+	"inf_res_wait_msec": 100,
+	"epc_data_setting_time_msec": 100,
+	"instance_announce_interval_sec": 60,
+	"property_announce_interval_sec": 60
+}

@@ -20,12 +20,18 @@ const mDeviceDescription = require('./lib/DeviceDescription.js');
 const mManufacturerTable = require('./lib/ManufacturerTable.js');
 const mUserConf = require('./lib/UserConf.js');
 const mConsole = require('./lib/Console.js');
+const path = require('path');
+const fs  = require('fs');
+
 
 /* ------------------------------------------------------------------
 * Constructor
 * ---------------------------------------------------------------- */
-const Emulator = function () {
-	this._conf = require('./conf/config.js');
+const Emulator = function (configDir) {
+	this._configDir = configDir;
+
+	let f = fs.readFileSync( path.join( this._configDir, 'config.json'), 'utf8')
+	this._conf = JSON.parse( f );
 
 	this._device = null;
 	this._api = null;
@@ -84,7 +90,7 @@ Emulator.prototype._startDevice = function () {
 		let device = null;
 		this._stopDevice().then(() => {
 			// EL デバイスのインスタンスを生成
-			device = new mDevice(this._conf, mDeviceDescription, mManufacturerTable, this._console);
+			device = new mDevice(this._conf, mDeviceDescription, mManufacturerTable, this._console, this._configDir);
 			// EL デバイスを初期化
 			return device.init();
 		}).then(() => {

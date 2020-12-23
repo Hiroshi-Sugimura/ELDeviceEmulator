@@ -1,11 +1,11 @@
 /* ------------------------------------------------------------------
 * Device.js
-* エミュレートする EL デバイスを表すモジュール
-*
-* - EL パケットの送受信はこのモジュールがハンドリングする
-* - 必要に応じてコントローラーとなる index.js にイベントハンドラを通して伝達する
-*
-* Date: 2019-12-22
+* エミュレートする EL デバイスを表すモジュール*
+**
+* - EL パケットの送受信はこのモジュールがハンドリングする*
+* - 必要に応じてコントローラーとなる index.js にイベントハンドラを通して伝達する*
+**
+* Date: 2019-12-22*
 * ---------------------------------------------------------------- */
 'use strict';
 const mPacketComposer = require('./PacketComposer.js');
@@ -24,7 +24,7 @@ const mPath = require('path');
 /* ------------------------------------------------------------------
 * Constructor
 * ---------------------------------------------------------------- */
-const Device = function (conf, mDeviceDescription, mManufacturerTable, console_obj) {
+const Device = function (conf, mDeviceDescription, mManufacturerTable, console_obj, configDir) {
 	// 設定情報
 	this._conf = JSON.parse(JSON.stringify(conf));
 
@@ -55,8 +55,12 @@ const Device = function (conf, mDeviceDescription, mManufacturerTable, console_o
 	// EL パケット送受信ログオブジェクト
 	this._packet_logger = null;
 
+	// ログ保存先
+	this._configDir = configDir;
+
+
 	// EOJ 情報をロード
-	this._current_eoj_list_json = mPath.resolve(__dirname, '../data/current_eoj_list.json');
+	this._current_eoj_list_json = mPath.resolve(this._configDir, 'current_eoj_list.json');
 	this._current_eoj_list = [];
 
 	// イベントハンドラ
@@ -166,21 +170,21 @@ Device.prototype.updateConf = function (conf) {
 
 /* ------------------------------------------------------------------
 * 初期化
-* init([eoj_list])
-* - instances | array  | optional | EOJ情報を格納したオブジェクトのリスト
-*   - eoj     | string | required | EOJを表す 16進数文字列 (例: "013001")
-*   - epc     | array  | optional | サポートするEPCのリスト。null ならすべてをサポート。
-*             |        |          | (例: ["80", "B0", "B1", "B3", ...])
-*
-* 例:
-*  init([
-*    {eoj: "013001", epc: ["80", "B0", "B1", "B3", ...]},
-*    {eoj: "013002", epc: ["80", "B0", "B1", "B3", ...]}
-*  ]);
-*
-*  - EOJ "0EF001" (Node profile class) は自動的に登録される。
-*  - eoj_list が指定されなかった場合は、/data/current_eoj_list.json が
-*    適用される。
+* init([eoj_list])*
+* - instances | array  | optional | EOJ情報を格納したオブジェクトのリスト*
+*   - eoj     | string | required | EOJを表す 16進数文字列 (例: "013001")*
+*   - epc     | array  | optional | サポートするEPCのリスト。null ならすべてをサポート。*
+*             |        |          | (例: ["80", "B0", "B1", "B3", ...])*
+**
+* 例:*
+*  init([*
+*    {eoj: "013001", epc: ["80", "B0", "B1", "B3", ...]},*
+*    {eoj: "013002", epc: ["80", "B0", "B1", "B3", ...]}*
+*  ]);*
+**
+*  - EOJ "0EF001" (Node profile class) は自動的に登録される。*
+*  - eoj_list が指定されなかった場合は、/data/current_eoj_list.json が*
+*    適用される。*
 * ---------------------------------------------------------------- */
 Device.prototype.init = function (eoj_list) {
 	let promise = new Promise((resolve, reject) => {
@@ -190,7 +194,7 @@ Device.prototype.init = function (eoj_list) {
 
 		// EL パケット送受信ログオブジェクト
 		if (this._conf['packet_log'] === true) {
-			this._packet_logger = new mPacketLogger(this._conf);
+			this._packet_logger = new mPacketLogger(this._conf, this._configDir);
 		}
 
 		// IpAddressUtils
@@ -243,10 +247,10 @@ Device.prototype.init = function (eoj_list) {
 		if (new_eoj_list.length === 0) {
 			let desc = this._mDeviceDescription.getEoj('0130');
 			new_eoj_list.push({
-				eoj: '013001',
-				epc: Object.keys(desc['elProperties']),
-				release: this._mDeviceDescription.getRelease()
-			});
+			  eoj: '013001',
+			  epc: Object.keys(desc['elProperties']),
+			  release: this._mDeviceDescription.getRelease()
+		  });
 		}
 
 		// コントローラーなら他の EOJ は削除 (Node profile は削除しない)
@@ -266,10 +270,10 @@ Device.prototype.init = function (eoj_list) {
 			node_profile_eoj = '0EF001';
 			let desc = this._mDeviceDescription.getEoj(node_profile_eoj);
 			new_eoj_list.unshift({
-				eoj: node_profile_eoj,
-				epc: Object.keys(desc['elProperties']),
-				release: this._mDeviceDescription.getRelease()
-			});
+			  eoj: node_profile_eoj,
+			  epc: Object.keys(desc['elProperties']),
+			  release: this._mDeviceDescription.getRelease()
+		  });
 		}
 
 		// EOJ 0x0EF0 (ノードプロファイル) の EPC 0xBF (個体識別番号) を除外
@@ -313,7 +317,7 @@ Device.prototype.init = function (eoj_list) {
 				release,
 				this._parser,
 				mEojSettings.get(eoj)
-			);
+				);
 			devobj.init();
 			this._device_objects[eoj] = devobj;
 		});
@@ -342,9 +346,9 @@ Device.prototype.init = function (eoj_list) {
 			// EPC 更新イベントハンドラをセット
 			devobj.onepcupdated = (eoj, props) => {
 				this.onepcupdated({
-					eoj: eoj,
-					properties: props
-				});
+				  eoj: eoj,
+				  properties: props
+			  });
 			};
 		});
 
@@ -393,17 +397,17 @@ Device.prototype._initNodeProfileInstance = function (devobj) {
 	let d3 = Buffer.alloc(4);
 	d3.writeUInt32BE(eoj_num - 1, 0);
 	props.push({
-		epc: 'D3',
-		edt: d3.slice(1, 4).toString('hex').toUpperCase()
-	});
+	  epc: 'D3',
+	  edt: d3.slice(1, 4).toString('hex').toUpperCase()
+  });
 
 	// EPC 0xD4 自ノードクラス数 (2バイト) (ノードプロファイルを含む)
 	let d4 = Buffer.alloc(2);
 	d4.writeUInt16BE(class_num);
 	props.push({
-		epc: 'D4',
-		edt: d4.toString('hex').toUpperCase()
-	});
+	  epc: 'D4',
+	  edt: d4.toString('hex').toUpperCase()
+  });
 
 	// EPC 0xD5 インスタンスリスト通知 (ノードプロファイルを除く)
 	// EPC 0xD6 自ノードインスタンスリストS (ノードプロファイルを除く)
@@ -429,13 +433,13 @@ Device.prototype._initNodeProfileInstance = function (devobj) {
 	});
 
 	props.push({
-		epc: 'D5',
-		edt: d6.join('').toUpperCase()
-	});
+	  epc: 'D5',
+	  edt: d6.join('').toUpperCase()
+  });
 	props.push({
-		epc: 'D6',
-		edt: d6.join('').toUpperCase()
-	});
+	  epc: 'D6',
+	  edt: d6.join('').toUpperCase()
+  });
 
 	// EPC 0xD7 自ノードクラスリストS (ノードプロファイルを除く)
 	let d7 = [];
@@ -459,9 +463,9 @@ Device.prototype._initNodeProfileInstance = function (devobj) {
 		d7.push(c);
 	});
 	props.push({
-		epc: 'D7',
-		edt: d7.join('').toUpperCase()
-	});
+	  epc: 'D7',
+	  edt: d7.join('').toUpperCase()
+  });
 	return devobj.setEpcValues(props, true);
 };
 
@@ -469,9 +473,9 @@ Device.prototype._initNodeProfileInstance = function (devobj) {
 Device.prototype._checkEojList = function (eoj_list) {
 	if (!eoj_list || !Array.isArray(eoj_list) || eoj_list.length === 0) {
 		return {
-			result: 1,
-			message: 'The parameter `eojList` must be a non-empty array.'
-		};
+		  result: 1,
+		  message: 'The parameter `eojList` must be a non-empty array.'
+	  };
 	}
 
 	// リリースバージョンの範囲を取得
@@ -600,44 +604,44 @@ Device.prototype._checkEojList = function (eoj_list) {
 			break;
 		} else {
 			new_eoj_list.push({
-				eoj: eoj,
-				epc: epc_list,
-				release: release
-			});
+			  eoj: eoj,
+			  epc: epc_list,
+			  release: release
+		  });
 		}
 	};
 
 	if (err) {
 		return {
-			result: 1,
-			message: err
-		};
+		  result: 1,
+		  message: err
+	  };
 	} else {
 		return {
-			result: 0,
-			eojList: new_eoj_list
-		};
+		  result: 0,
+		  eojList: new_eoj_list
+	  };
 	}
 };
 
 /* ------------------------------------------------------------------
 * reset()
-* デバイスをリセットする。
-* - elemu/data/ 内に保存された current_eoj_list.json, state_XXXXXX.json
-*  を削除してから、デバイスを再起動する。
-*
-* 引数
-*   なし
-*
-* 戻値
-*   Promise オブジェクト
-*
-*   resolve() には何も引き渡さない。
+* デバイスをリセットする。*
+* - elemu/data/ 内に保存された current_eoj_list.json, state_XXXXXX.json*
+*  を削除してから、デバイスを再起動する。*
+**
+* 引数*
+*   なし*
+**
+* 戻値*
+*   Promise オブジェクト*
+**
+*   resolve() には何も引き渡さない。*
 * ---------------------------------------------------------------- */
 Device.prototype.reset = function () {
 	let promise = new Promise((resolve, reject) => {
 		let status = this.getPowerStatus();
-		let dpath = mPath.resolve(__dirname, '../data');
+		let dpath = mPath.resolve(this._configDir, '');
 		this.stop().then(() => {
 			return this._findFilesToDeleteForReset(dpath);
 		}).then((fpath_list) => {
@@ -716,21 +720,21 @@ Device.prototype._deleteFiles = function (fpath_list) {
 
 /* ------------------------------------------------------------------
 * getCurrentEojList()
-* 現在セットされている EOJ 情報のリストを取得する
-*
-* 引数:
-*   なし
-*
-* 戻値:
-*   this._current_eoj_list の内容をそのまま返す
-*     [
-*       {
-*         "eoj": "031001",
-*         "epc": ["80", "81",...],
-*         "release": "J"
-*       },
-*       ...
-*     ]
+* 現在セットされている EOJ 情報のリストを取得する*
+**
+* 引数:*
+*   なし*
+**
+* 戻値:*
+*   this._current_eoj_list の内容をそのまま返す*
+*     [*
+*       {*
+*         "eoj": "031001",*
+*         "epc": ["80", "81",...],*
+*         "release": "J"*
+*       },*
+*       ...*
+*     ]*
 * ---------------------------------------------------------------- */
 Device.prototype.getCurrentEojList = function () {
 	return JSON.parse(JSON.stringify(this._current_eoj_list));
@@ -738,16 +742,16 @@ Device.prototype.getCurrentEojList = function () {
 
 /* ------------------------------------------------------------------
 * getCurrentEoj(epc)
-* 現在セットされている EOJ 情報のリストから指定の EOJ の情報を取得する
-*
-* 引数:
-*   epc: EPC の 16 進数文字列
-*
-* 戻値:
-*   this._current_eoj_list のうち、指定の EOJ に該当するオブジェクトの
-*   内容をそのまま返す。
-*     { "eoj": "031001", "epc": ["80", "81",...]},
-*   もし指定の EOJ が見つからなければ null を返す。
+* 現在セットされている EOJ 情報のリストから指定の EOJ の情報を取得する*
+**
+* 引数:*
+*   epc: EPC の 16 進数文字列*
+**
+* 戻値:*
+*   this._current_eoj_list のうち、指定の EOJ に該当するオブジェクトの*
+*   内容をそのまま返す。*
+*     { "eoj": "031001", "epc": ["80", "81",...]},*
+*   もし指定の EOJ が見つからなければ null を返す。*
 * ---------------------------------------------------------------- */
 Device.prototype.getCurrentEoj = function (eoj) {
 	eoj = eoj.toUpperCase();
@@ -764,37 +768,37 @@ Device.prototype.getCurrentEoj = function (eoj) {
 
 /* ------------------------------------------------------------------
 * addCurrentEoj(params)
-* EOJ 情報を追加してデバイスを再起動する。
-*
-* - ノードプロファイル (EOJ: 0x0EF0XX) を指定すると、既存のノードプロ
-*   ファイルを置き換える。
-* - コントローラー (EOJ: 0x05FFXX) を登録する場合は、ノードプロファイルを
-*   除くすべての EOJ を事前に削除しておかなければいけない。
-* - コントローラー (EOJ: 0x05FFXX) がすでに登録されている場合は、もう EOJ
-*   は追加できない。
-*
-* 引数:
-* - params
-*   - eoj     | String | required | EOJ の 16 進数文字列
-*   - epc     | Array  | optional | サポートする EPC のリスト
-*             |        |          | 指定がなければ全 EPC をサポート対象とする
-*   - release | String | optional | リリースバージョン (例: "J")
-*             |        |          | 指定がなければ DeviceDescription の
-*             |        |          | リリースバージョンが適用される
-*
-* 戻値:
-* - Promise オブジェクト
-* 
-* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を
-* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。
-*
-* resolve() には、結果を表すオブジェクトが渡される:
-*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる
-*   data      | Object   | 失敗の場合は存在しない
-*     eoj     | String   | 追加した EOJ
-*     epc     | Array    | 追加した EOJ がサポートする EPC のリスト
-*     release | String   | ECHONET Lite 仕様書 Appendix のリリースバージョン (例: "J")
-*   message   | String   | エラーメッセージ (成功の場合は存在しない)
+* EOJ 情報を追加してデバイスを再起動する。*
+**
+* - ノードプロファイル (EOJ: 0x0EF0XX) を指定すると、既存のノードプロ*
+*   ファイルを置き換える。*
+* - コントローラー (EOJ: 0x05FFXX) を登録する場合は、ノードプロファイルを*
+*   除くすべての EOJ を事前に削除しておかなければいけない。*
+* - コントローラー (EOJ: 0x05FFXX) がすでに登録されている場合は、もう EOJ*
+*   は追加できない。*
+**
+* 引数:*
+* - params*
+*   - eoj     | String | required | EOJ の 16 進数文字列*
+*   - epc     | Array  | optional | サポートする EPC のリスト*
+*             |        |          | 指定がなければ全 EPC をサポート対象とする*
+*   - release | String | optional | リリースバージョン (例: "J")*
+*             |        |          | 指定がなければ DeviceDescription の*
+*             |        |          | リリースバージョンが適用される*
+**
+* 戻値:*
+* - Promise オブジェクト*
+**
+* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を*
+* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。*
+**
+* resolve() には、結果を表すオブジェクトが渡される:*
+*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる*
+*   data      | Object   | 失敗の場合は存在しない*
+*     eoj     | String   | 追加した EOJ*
+*     epc     | Array    | 追加した EOJ がサポートする EPC のリスト*
+*     release | String   | ECHONET Lite 仕様書 Appendix のリリースバージョン (例: "J")*
+*   message   | String   | エラーメッセージ (成功の場合は存在しない)*
 * ---------------------------------------------------------------- */
 Device.prototype.addCurrentEoj = function (params) {
 	let promise = new Promise((resolve, reject) => {
@@ -807,9 +811,9 @@ Device.prototype.addCurrentEoj = function (params) {
 		let eoj_hex = o['eoj'];
 		if (this.getCurrentEoj(eoj_hex)) {
 			resolve({
-				result: 1,
-				message: 'The specified EOJ has been already registered: ' + eoj_hex
-			});
+			  result: 1,
+			  message: 'The specified EOJ has been already registered: ' + eoj_hex
+		  });
 			return;
 		}
 
@@ -822,9 +826,9 @@ Device.prototype.addCurrentEoj = function (params) {
 			// インスタンス番号は 01 か 02 のいずれか
 			if (!/^0EF0(01|02)$/.test(eoj_hex)) {
 				resolve({
-					result: 1,
-					message: 'The instance number for The node profile class (`0EF0`) must be `01` or `02`.'
-				});
+				  result: 1,
+				  message: 'The instance number for The node profile class (`0EF0`) must be `01` or `02`.'
+			  });
 				return;
 			}
 		}
@@ -842,9 +846,9 @@ Device.prototype.addCurrentEoj = function (params) {
 		if (is_controller) {
 			if (!is_node_profile_added) {
 				resolve({
-					result: 1,
-					message: 'When this emulator is started as a controller, no EOJs can be added except a Node Profile.'
-				});
+				  result: 1,
+				  message: 'When this emulator is started as a controller, no EOJs can be added except a Node Profile.'
+			  });
 				return;
 			}
 		}
@@ -862,9 +866,9 @@ Device.prototype.addCurrentEoj = function (params) {
 			}
 			if (err) {
 				resolve({
-					result: 1,
-					message: err
-				});
+				  result: 1,
+				  message: err
+			  });
 				return;
 			}
 		}
@@ -898,30 +902,30 @@ Device.prototype.addCurrentEoj = function (params) {
 
 /* ------------------------------------------------------------------
 * updateCurrentEoj(params)
-* EOJ 情報 (EPC リスト) を修正してデバイスを再起動する
-*
-* 引数:
-* - params
-*   - eoj     | String | required | EOJ の 16 進数文字列
-*   - epc     | Array  | optional | サポートする EPC のリスト
-*             |        |          | 指定がなければ全 EPC をサポート対象とする
-*   - release | String | optional | リリースバージョン (例: "J")
-*             |        |          | 指定がなければ DeviceDescription の
-*             |        |          | リリースバージョンが適用される
-*
-* 戻値:
-* - Promise オブジェクト
-* 
-* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を
-* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。
-*
-* resolve() には、結果を表すオブジェクトが渡される:
-*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる
-*             |          | 指定の EOJ が見つからない場合は 404 がセットされる
-*   data      | Object   | 失敗の場合は存在しない
-*     eoj     | String   | 修正した EOJ
-*     epc     | Array    | 修正した EOJ がサポートする EPC のリスト
-*   message   | String   | エラーメッセージ (成功の場合は存在しない)
+* EOJ 情報 (EPC リスト) を修正してデバイスを再起動する*
+**
+* 引数:*
+* - params*
+*   - eoj     | String | required | EOJ の 16 進数文字列*
+*   - epc     | Array  | optional | サポートする EPC のリスト*
+*             |        |          | 指定がなければ全 EPC をサポート対象とする*
+*   - release | String | optional | リリースバージョン (例: "J")*
+*             |        |          | 指定がなければ DeviceDescription の*
+*             |        |          | リリースバージョンが適用される*
+**
+* 戻値:*
+* - Promise オブジェクト*
+**
+* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を*
+* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。*
+**
+* resolve() には、結果を表すオブジェクトが渡される:*
+*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる*
+*             |          | 指定の EOJ が見つからない場合は 404 がセットされる*
+*   data      | Object   | 失敗の場合は存在しない*
+*     eoj     | String   | 修正した EOJ*
+*     epc     | Array    | 修正した EOJ がサポートする EPC のリスト*
+*   message   | String   | エラーメッセージ (成功の場合は存在しない)*
 * ---------------------------------------------------------------- */
 Device.prototype.updateCurrentEoj = function (params) {
 	let promise = new Promise((resolve, reject) => {
@@ -936,9 +940,9 @@ Device.prototype.updateCurrentEoj = function (params) {
 
 		if (!this.getCurrentEoj(eoj)) {
 			resolve({
-				result: 404,
-				message: 'The specified EOJ has not been registered: ' + eoj
-			});
+			  result: 404,
+			  message: 'The specified EOJ has not been registered: ' + eoj
+		  });
 			return;
 		}
 
@@ -963,33 +967,33 @@ Device.prototype.updateCurrentEoj = function (params) {
 
 /* ------------------------------------------------------------------
 * deleteCurrentEoj(epc)
-* 現在セットされている EOJ 情報のリストから指定の EOJ の情報を削除する
-* - ノードプロファイルは削除できない。
-*
-* 引数:
-*   epc: EPC の 16 進数文字列
-*
-* 戻値:
-* - Promise オブジェクト
-* 
-* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を
-* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。
-*
-* resolve() には、結果を表すオブジェクトが渡される:
-*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる
-*             |          | 指定の EOJ が見つからない場合は 404 がセットされる
-*   data      | Object   | 失敗の場合は存在しない
-*     eoj     | String   | 削除した EOJ
-*     epc     | Array    | 削除した EOJ がサポートする EPC のリスト
-*   message   | String   | エラーメッセージ (成功の場合は存在しない)
+* 現在セットされている EOJ 情報のリストから指定の EOJ の情報を削除する*
+* - ノードプロファイルは削除できない。*
+**
+* 引数:*
+*   epc: EPC の 16 進数文字列*
+**
+* 戻値:*
+* - Promise オブジェクト*
+**
+* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を*
+* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。*
+**
+* resolve() には、結果を表すオブジェクトが渡される:*
+*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる*
+*             |          | 指定の EOJ が見つからない場合は 404 がセットされる*
+*   data      | Object   | 失敗の場合は存在しない*
+*     eoj     | String   | 削除した EOJ*
+*     epc     | Array    | 削除した EOJ がサポートする EPC のリスト*
+*   message   | String   | エラーメッセージ (成功の場合は存在しない)*
 * ---------------------------------------------------------------- */
 Device.prototype.deleteCurrentEoj = function (eoj) {
 	let promise = new Promise((resolve, reject) => {
 		if (!eoj || typeof (eoj) !== 'string' || !/^([0-9A-Fa-f]{6})$/.test(eoj)) {
 			resolve({
-				result: 1,
-				message: 'The specified EOJ is invalid: ' + eoj
-			});
+			  result: 1,
+			  message: 'The specified EOJ is invalid: ' + eoj
+		  });
 			return;
 		}
 
@@ -997,17 +1001,17 @@ Device.prototype.deleteCurrentEoj = function (eoj) {
 		let o = this.getCurrentEoj(eoj);
 		if (!o) {
 			resolve({
-				result: 404,
-				message: 'The specified EOJ has not been registered: ' + eoj
-			});
+			  result: 404,
+			  message: 'The specified EOJ has not been registered: ' + eoj
+		  });
 			return;
 		}
 
 		if (/^0EF0/.test(eoj)) {
 			resolve({
-				result: 403,
-				message: 'The node profile can not be deleted.'
-			});
+			  result: 403,
+			  message: 'The node profile can not be deleted.'
+		  });
 			return;
 		}
 
@@ -1035,41 +1039,41 @@ Device.prototype.deleteCurrentEoj = function (eoj) {
 
 /* ------------------------------------------------------------------
 * setCurrentEojList(eoj_list)
-* EOJ 情報のリストを一括でセットしてデバイスを再起動する
-*
-* - ノードプロファイル (EOJ: 0x0EF001) は自動的に登録されるため、指定する
-*   必要はない (指定することも可能)。
-* - 登録可能なノードプロファイルの EOJ は 0x0EF001 (一般ノード) か
-*   0x0EF002 (送信専用ノード) のいずれか一方のみ。
-* - コントローラー (EOJ: 0x05FFXX) が含まれる場合は、それ以外の EOJ は指定
-*   できない。
-*
-* 引数:
-* - eoj_list = [
-*     {
-*       "eoj": "013001",
-*       "epc": ["80", "81", ...],
-*       "release": "J"
-*     },
-*     ...
-*   ]
-*
-*   - "epc" はオプションで、指定がなければすべての EPC が適用される。
-*   - "epc" は指定するなら 1 つ以上の要素がある Array でなければいけない。
-*   - "release" はオプションで指定がなければ DeviceDescription のリリース
-*     バージョンが適用される。(例: "J")
-*
-* 戻値:
-* - Promise オブジェクト
-* 
-* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を
-* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。
-*
-* resolve() には、結果を表すオブジェクトが渡される:
-*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる
-*   data      | Object   | 失敗の場合は存在しない
-*     eojList | Array    | 設定した EOJ のリスト
-*   message   | String   | エラーメッセージ (成功の場合は存在しない)
+* EOJ 情報のリストを一括でセットしてデバイスを再起動する*
+**
+* - ノードプロファイル (EOJ: 0x0EF001) は自動的に登録されるため、指定する*
+*   必要はない (指定することも可能)。*
+* - 登録可能なノードプロファイルの EOJ は 0x0EF001 (一般ノード) か*
+*   0x0EF002 (送信専用ノード) のいずれか一方のみ。*
+* - コントローラー (EOJ: 0x05FFXX) が含まれる場合は、それ以外の EOJ は指定*
+*   できない。*
+**
+* 引数:*
+* - eoj_list = [*
+*     {*
+*       "eoj": "013001",*
+*       "epc": ["80", "81", ...],*
+*       "release": "J"*
+*     },*
+*     ...*
+*   ]*
+**
+*   - "epc" はオプションで、指定がなければすべての EPC が適用される。*
+*   - "epc" は指定するなら 1 つ以上の要素がある Array でなければいけない。*
+*   - "release" はオプションで指定がなければ DeviceDescription のリリース*
+*     バージョンが適用される。(例: "J")*
+**
+* 戻値:*
+* - Promise オブジェクト*
+**
+* 指定された EOJ の値が不正な値だったとしても reject() ではなく resolve() を*
+* 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。*
+**
+* resolve() には、結果を表すオブジェクトが渡される:*
+*   result    | Interger | 成功なら 0 が、失敗なら 1 がセットされる*
+*   data      | Object   | 失敗の場合は存在しない*
+*     eojList | Array    | 設定した EOJ のリスト*
+*   message   | String   | エラーメッセージ (成功の場合は存在しない)*
 * ---------------------------------------------------------------- */
 Device.prototype.setCurrentEojList = function (eoj_list) {
 	let promise = new Promise((resolve, reject) => {
@@ -1126,9 +1130,9 @@ Device.prototype.setCurrentEojList = function (eoj_list) {
 		}
 		if (err) {
 			resolve({
-				result: 1,
-				message: err
-			});
+			  result: 1,
+			  message: err
+		  });
 			return;
 		}
 
@@ -1140,20 +1144,20 @@ Device.prototype.setCurrentEojList = function (eoj_list) {
 			if (status === true) {
 				this.start().then(() => {
 					resolve({
-						result: 0,
-						data: {
-							eojList: new_eoj_list
-						}
+					  result: 0,
+					  data: {
+						eojList: new_eoj_list
+					}
 					});
 				}).catch((error) => {
 					reject(error);
 				});
 			} else {
 				resolve({
-					result: 0,
-					data: {
-						eojList: new_eoj_list
-					}
+				  result: 0,
+				  data: {
+					eojList: new_eoj_list
+				}
 				});
 			}
 		}).catch((error) => {
@@ -1165,8 +1169,8 @@ Device.prototype.setCurrentEojList = function (eoj_list) {
 
 /* ------------------------------------------------------------------
 * start()
-* デバイスを起動する
-* - すでに起動していた場合、何もせずに resolve する。
+* デバイスを起動する*
+* - すでに起動していた場合、何もせずに resolve する。*
 * ---------------------------------------------------------------- */
 Device.prototype.start = function () {
 	let promise = new Promise((resolve, reject) => {
@@ -1230,8 +1234,8 @@ Device.prototype.start = function () {
 							process.exit();
 						}
 						this.onpowerstatuschanged({
-							powerStatus: true
-						});
+						  powerStatus: true
+					  });
 						// EOJ が送信専用ノード (0x0EF002) なら定期的に送信
 						if (node_profile_eoj === '0EF002') {
 							this.instance_announce_timer = setInterval(() => {
@@ -1254,8 +1258,8 @@ Device.prototype.start = function () {
 
 			this._console.printSysInitRes('OK');
 			this.onpowerstatuschanged({
-				powerStatus: true
-			});
+			  powerStatus: true
+		  });
 
 			// IPv6 モードならマルチキャスト送信のネットワークインタフェースをセット
 			if (this._conf['ip_address_version'] === 6) {
@@ -1348,16 +1352,16 @@ Device.prototype._sendPropertyNotification = function (eoj_list) {
 					continue;
 				}
 				let buf = mPacketComposer.compose({
-					seoj: eoj_hex,
-					deoj: '0EF001',
-					esv: 'INF',
-					properties: [
-						{
-							epc: epc_hex,
-							edt: edt_hex
-						}
-					]
-				});
+				  seoj: eoj_hex,
+				  deoj: '0EF001',
+				  esv: 'INF',
+				  properties: [
+					  {
+						epc: epc_hex,
+						edt: edt_hex
+					}
+	  ]
+			  });
 				packet_buf_list.push(buf);
 			}
 			getEpcValuesAndAnnounce(callback);
@@ -1423,7 +1427,7 @@ Device.prototype._receivePacket = function (buf, device_info) {
 		this.onreceived(address, parsed);
 		return;
 	}
-	
+
 	// 自身がコントローラーの場合
 	// リモートデバイス側の規格 Version 情報が分かっていれば、再度、パケットをパースしなおす
 	if (this._is_controller) {
@@ -1463,18 +1467,18 @@ Device.prototype._receivePacket = function (buf, device_info) {
 		let prop_list = [];
 		el['properties'].forEach((p) => {
 			prop_list.push({
-				epc: p['epc']['hex'],
-				propertyName: p['epc']['propertyName'],
-				edt: p['edt']
-			});
+			  epc: p['epc']['hex'],
+			  propertyName: p['epc']['propertyName'],
+			  edt: p['edt']
+		  });
 		});
 		if (prop_list.length > 0) {
 			let seoj = el['seoj']['hex'];
 			this.onremoteepcupdated({
-				address: address,
-				eoj: seoj,
-				elProperties: prop_list
-			});
+			  address: address,
+			  eoj: seoj,
+			  elProperties: prop_list
+		  });
 		}
 	}
 
@@ -1525,32 +1529,32 @@ Device.prototype._dropMembership = function () {
 Device.prototype._createInstanceListNotificationPacket = function (seoj, eoj_list) {
 	/* -------------------------------------------------------
 	* ECHONET Lite 仕様書
-	* - 第5部 4.2 ノードからコントローラへのメッセージ送信による検出
-	* - 第2部 4.3.1 ECHONET Lite ノードスタート時の基本シーケンス
-	* - 第2部 6.11.1 ノードプロファイルクラス詳細規定
+	* - 第5部 4.2 ノードからコントローラへのメッセージ送信による検出	*
+	* - 第2部 4.3.1 ECHONET Lite ノードスタート時の基本シーケンス	*
+	* - 第2部 6.11.1 ノードプロファイルクラス詳細規定	*
 	* ----------------------------------------------------- */
-	if (!seoj || !/^0EF00(1|2)$/.test(seoj)) {
-		seoj = '0EF001';
-	}
+		if (!seoj || !/^0EF00(1|2)$/.test(seoj)) {
+			seoj = '0EF001';
+		}
 	let edt = Buffer.from([eoj_list.length]).toString('hex') + eoj_list.join('');
 	let buf = mPacketComposer.compose({
-		seoj: seoj,
-		deoj: '0EF001',
-		esv: 'INF',
-		properties: [
-			{
-				epc: 'D5',
-				edt: edt
-			}
-		]
-	});
+	  seoj: seoj,
+	  deoj: '0EF001',
+	  esv: 'INF',
+	  properties: [
+		  {
+			epc: 'D5',
+			edt: edt
+		}
+]
+  });
 	return buf;
 };
 
 /* ------------------------------------------------------------------
 * stop()
-* デバイスを停止する
-* - すでに停止していた場合、何もせずに resolve する。
+* デバイスを停止する*
+* - すでに停止していた場合、何もせずに resolve する。*
 * ---------------------------------------------------------------- */
 Device.prototype.stop = function () {
 	let promise = new Promise((resolve, reject) => {
@@ -1568,16 +1572,16 @@ Device.prototype.stop = function () {
 			this._udp.close(() => {
 				this._udp = null;
 				this.onpowerstatuschanged({
-					powerStatus: false
-				});
+				  powerStatus: false
+			  });
 				this._console.printSysInitRes('OK');
 				resolve();
 			});
 		} else {
 			this._udp = null;
 			this.onpowerstatuschanged({
-				powerStatus: false
-			});
+			  powerStatus: false
+		  });
 			this._console.printSysInitRes('OK');
 			resolve();
 		}
@@ -1587,7 +1591,7 @@ Device.prototype.stop = function () {
 
 /* ------------------------------------------------------------------
 * getPowerStatus()
-* デバイスの電源状態を取得する
+* デバイスの電源状態を取得する*
 * ---------------------------------------------------------------- */
 Device.prototype.getPowerStatus = function () {
 	return this._udp ? true : false;
@@ -1595,36 +1599,36 @@ Device.prototype.getPowerStatus = function () {
 
 /* ------------------------------------------------------------------
 * sendPacket(address, packet)
-* パケットを送信
-*
-* 引数
-*   - address:
-*       送信先 IP アドレス
-*   - packet:
-*       EL パケットを表すハッシュオブジェクト
-*
-* - packet       | Object  | required |
-*   - tid        | integer | optional | 指定がなけれは自動採番
-*   - seoj       | string  | required | 16進数文字列 (例: "013001")
-*   - deoj       | string  | required | 16進数文字列 (例: "05FF01")
-*   - esv        | string  | required | ESV キーワード (例: "GET_RES") または 16進数文字列
-*   - properties | array   | required | object のリスト
-*     - epc      | string  | required | EPCの16進数文字列 (例: "80")
-*     - edt      | string  | optional | EDTの16進数文字列
-*
-* 戻値
-*   Promise オブジェクトを返す
-*   reject() には以下のハッシュオブジェクトを引き渡す:
-*
-*   {
-*     result: 0, // 0: 成功, 1: パラメーターエラー
-*     message: 'エラーメッセージ', // 成功時には null
-*     hex: "1081000205FF010EF0006201D600", // 送信パケットの16進数文字列,
-*     data: {} // 送信パケットをパース下結果
-*   }
-*
-*   パラメーターエラーの場合は、reject() ではなく resolve() を呼び出す
-*   reject() を呼び出すのは、UDP パケット送信エラーの場合のみ
+* パケットを送信*
+**
+* 引数*
+*   - address:*
+*       送信先 IP アドレス*
+*   - packet:*
+*       EL パケットを表すハッシュオブジェクト*
+**
+* - packet       | Object  | required |*
+*   - tid        | integer | optional | 指定がなけれは自動採番*
+*   - seoj       | string  | required | 16進数文字列 (例: "013001")*
+*   - deoj       | string  | required | 16進数文字列 (例: "05FF01")*
+*   - esv        | string  | required | ESV キーワード (例: "GET_RES") または 16進数文字列*
+*   - properties | array   | required | object のリスト*
+*     - epc      | string  | required | EPCの16進数文字列 (例: "80")*
+*     - edt      | string  | optional | EDTの16進数文字列*
+**
+* 戻値*
+*   Promise オブジェクトを返す*
+*   reject() には以下のハッシュオブジェクトを引き渡す:*
+**
+*   {*
+*     result: 0, // 0: 成功, 1: パラメーターエラー*
+*     message: 'エラーメッセージ', // 成功時には null*
+*     hex: "1081000205FF010EF0006201D600", // 送信パケットの16進数文字列,*
+*     data: {} // 送信パケットをパース下結果*
+*   }*
+**
+*   パラメーターエラーの場合は、reject() ではなく resolve() を呼び出す*
+*   reject() を呼び出すのは、UDP パケット送信エラーの場合のみ*
 * ---------------------------------------------------------------- */
 Device.prototype.sendPacket = function (address, packet) {
 	let promise = new Promise((resolve, reject) => {
@@ -1636,9 +1640,9 @@ Device.prototype.sendPacket = function (address, packet) {
 				message += error.message;
 			}
 			resolve({
-				result: 1,
-				message: message
-			});
+			  result: 1,
+			  message: message
+		  });
 			return;
 		}
 		this.send(address, buf).then((parsed) => {
@@ -1652,10 +1656,10 @@ Device.prototype.sendPacket = function (address, packet) {
 
 /* ------------------------------------------------------------------
 * send(address, buf)
-* パケットを送信する
-*
-* EL パケットを表す Buffer オブジェクトを引数に取るローレベルメソッド。
-* ハイレベルメソッドは sendPacket() メソッドを使うこと。
+* パケットを送信する*
+**
+* EL パケットを表す Buffer オブジェクトを引数に取るローレベルメソッド。*
+* ハイレベルメソッドは sendPacket() メソッドを使うこと。*
 * ---------------------------------------------------------------- */
 Device.prototype.send = function (address, buf) {
 	let promise = new Promise((resolve, reject) => {
@@ -1705,9 +1709,9 @@ Device.prototype.send = function (address, buf) {
 					dest_addr = this._ip_address_utils.getMulticastAddress();
 				}
 				this._packet_logger.txError(dest_addr, {
-					message: error.message,
-					hex: buf.toString('hex').toUpperCase()
-				});
+				  message: error.message,
+				  hex: buf.toString('hex').toUpperCase()
+			  });
 			}
 			reject(error);
 		});
@@ -1724,20 +1728,20 @@ Device.prototype._sendSnaForOpcOverflow = function (address, parsed) {
 		return;
 	}
 	let packet = {
-		tid: parseInt(d['tid'], 16),
-		seoj: d['deoj']['hex'], // DEOJ と SDOJ をひっくり返す
-		deoj: d['seoj']['hex'],
-		esv: '5' + esv2,
-		properties: []
-	};
+	  tid: parseInt(d['tid'], 16),
+	  seoj: d['deoj']['hex'], // DEOJ と SDOJ をひっくり返す
+	  deoj: d['seoj']['hex'],
+	  esv: '5' + esv2,
+	  properties: []
+  };
 
 	let props = d['properties'];
 	for (let i = 0, len = props.length; i < len; i++) {
 		let prop = props[i];
 		packet['properties'].push({
-			epc: prop['epc']['hex'],
-			edt: props['edt']['hex']
-		});
+		  epc: prop['epc']['hex'],
+		  edt: props['edt']['hex']
+	  });
 	}
 
 	let buf = mPacketComposer.compose(packet);
@@ -1753,26 +1757,26 @@ Device.prototype._sendSnaForOpcOverflow = function (address, parsed) {
 
 /* ------------------------------------------------------------------
 * getEpcValues(eoj, props)
-* EPC の値 (EDT) を読みだす (ダッシュボード向け)
-*
-* 引数:
-* - eoj      | String  | required |
-*     - エミュレート中のインスタンスの EOJ (例: "013001")
-* - props    | Array   | required |
-*     - 例: [{"epc": "8A", "edt":"any"}, ...]
-*     - epc の値しか見ないので edt の any の部分は何が入っていても構わない
-*
-* 戻値:
-* - Promise オブジェクト
-*
-* resolve() には、結果を表すオブジェクトが渡される:
-* {
-*    result       : 読み出しに失敗した EDT の数 (つまりすべて成功すれば 0),
-*    message      : エラーメッセージ、エラーがなければ null, 複数の失敗があれば最後のエラーメッセージがセット,
-*    elProperties : プロパティ情報のリスト
-*  }
-*
-* reject() は本メソッドに渡されたパラメータに不備があった場合のみ呼び出される。
+* EPC の値 (EDT) を読みだす (ダッシュボード向け)*
+**
+* 引数:*
+* - eoj      | String  | required |*
+*     - エミュレート中のインスタンスの EOJ (例: "013001")*
+* - props    | Array   | required |*
+*     - 例: [{"epc": "8A", "edt":"any"}, ...]*
+*     - epc の値しか見ないので edt の any の部分は何が入っていても構わない*
+**
+* 戻値:*
+* - Promise オブジェクト*
+**
+* resolve() には、結果を表すオブジェクトが渡される:*
+* {*
+*    result       : 読み出しに失敗した EDT の数 (つまりすべて成功すれば 0),*
+*    message      : エラーメッセージ、エラーがなければ null, 複数の失敗があれば最後のエラーメッセージがセット,*
+*    elProperties : プロパティ情報のリスト*
+*  }*
+**
+* reject() は本メソッドに渡されたパラメータに不備があった場合のみ呼び出される。*
 * ---------------------------------------------------------------- */
 Device.prototype.getEpcValues = function (eoj, props) {
 	let promise = new Promise((resolve, reject) => {
@@ -1799,11 +1803,11 @@ Device.prototype.getEpcValues = function (eoj, props) {
 					edt_data['data'] = pv;
 				};
 				prop_list.push({
-					epc: epc,
-					propertyName: pdesc[epc] ? pdesc[epc]['propertyName'] : null,
-					edt: edt_data,
-					map: devobj.getAccessRule(epc)
-				});
+				  epc: epc,
+				  propertyName: pdesc[epc] ? pdesc[epc]['propertyName'] : null,
+				  edt: edt_data,
+				  map: devobj.getAccessRule(epc)
+			  });
 			});
 			res['elProperties'] = prop_list;
 			delete res['vals'];
@@ -1832,26 +1836,26 @@ Device.prototype._convHexToBuffer = function (hex) {
 
 /* ------------------------------------------------------------------
 * setEpcValues(eoj, props)
-* EPC の値 (EDT) を書き込む (ダッシュボード向け)
-*
-* 引数:
-* - eoj      | String  | required |
-*     - エミュレート中のインスタンスの EOJ (例: "013001")
-* - props    | Array   | required |
-*     - 例: [{"epc": "8A", "edt":"any"}, ...]
-*
-* 戻値:
-* - Promise オブジェクト
-*
-* resolve() には、結果を表すオブジェクトが渡される:
-* {
-*    result  : 保存に失敗した EDT の数 (つまりすべて成功すれば 0),
-*    message : エラーメッセージ、エラーがなければ null, 複数の失敗があれば最後のエラーメッセージがセット,
-*    vals    : 保存に成功した EDT は null が、失敗した EDT は引数の vals と同じ (SNA を想定),
-*    changed : 変更があった ECP と EDT のハッシュオブジェクト (状態変化INFの情報源として使われる)
-*  }
-*
-* reject() は本メソッドに渡されたパラメータに不備があった場合のみ呼び出される。
+* EPC の値 (EDT) を書き込む (ダッシュボード向け)*
+**
+* 引数:*
+* - eoj      | String  | required |*
+*     - エミュレート中のインスタンスの EOJ (例: "013001")*
+* - props    | Array   | required |*
+*     - 例: [{"epc": "8A", "edt":"any"}, ...]*
+**
+* 戻値:*
+* - Promise オブジェクト*
+**
+* resolve() には、結果を表すオブジェクトが渡される:*
+* {*
+*    result  : 保存に失敗した EDT の数 (つまりすべて成功すれば 0),*
+*    message : エラーメッセージ、エラーがなければ null, 複数の失敗があれば最後のエラーメッセージがセット,*
+*    vals    : 保存に成功した EDT は null が、失敗した EDT は引数の vals と同じ (SNA を想定),*
+*    changed : 変更があった ECP と EDT のハッシュオブジェクト (状態変化INFの情報源として使われる)*
+*  }*
+**
+* reject() は本メソッドに渡されたパラメータに不備があった場合のみ呼び出される。*
 * ---------------------------------------------------------------- */
 Device.prototype.setEpcValues = function (eoj, props) {
 	let promise = new Promise((resolve, reject) => {
@@ -1950,9 +1954,9 @@ Device.prototype._receivePacketForController = function (parsed, device_info) {
 				return;
 			} else {
 				this.ondisappeared({
-					id: rdev['id'],
-					address: address
-				});
+				  id: rdev['id'],
+				  address: address
+			  });
 				delete this._remote_devices[address];
 			}
 		} else {
@@ -1995,9 +1999,9 @@ Device.prototype._receivePacketForController = function (parsed, device_info) {
 				is_known_classes[eoj_hex] = true;
 			} else {
 				class_names[eoj_hex] = {
-					ja: '不明',
-					en: 'Unknown'
-				};
+				  ja: '不明',
+				  en: 'Unknown'
+			  };
 				is_known_classes[eoj_hex] = false;
 			}
 			if (eoj_list.indexOf(eoj_hex) < 0) {
@@ -2009,29 +2013,29 @@ Device.prototype._receivePacketForController = function (parsed, device_info) {
 			is_known_classes[seoj] = true;
 		} else {
 			class_names[seoj] = {
-				ja: '不明',
-				en: 'Unknown'
-			};
+			  ja: '不明',
+			  en: 'Unknown'
+		  };
 			is_known_classes[seoj] = false;
 		}
 
 		let eojs = {};
 		eoj_list.forEach((eoj) => {
 			eojs[eoj] = {
-				eoj: eoj,
-				className: class_names[eoj],
-				manufacturer: null,
-				release: '',
-				elProperties: null,
-				isKnownClass: is_known_classes[eoj]
-			};
+			  eoj: eoj,
+			  className: class_names[eoj],
+			  manufacturer: null,
+			  release: '',
+			  elProperties: null,
+			  isKnownClass: is_known_classes[eoj]
+		  };
 		});
 
 		let rdev = {
-			address: address,
-			id: null,
-			eojList: []
-		};
+		  address: address,
+		  id: null,
+		  eojList: []
+	  };
 
 		// 識別番号 (EPC: 0x83) を取得
 		this._getRemoteDeviceId(address).then((id) => {
@@ -2069,14 +2073,14 @@ Device.prototype._receivePacketForController = function (parsed, device_info) {
 	} else {
 		// Node profile に対して自ノードインスタンスリストS (EPC: 0xD6) Get を送信
 		let packet = {
-			seoj: this._controller_eoj,
-			deoj: '0EF000',
-			esv: '62',
-			properties: [{
-				epc: 'D6',
-				edt: null
-			}]
-		};
+		  seoj: this._controller_eoj,
+		  deoj: '0EF000',
+		  esv: '62',
+		  properties: [{
+			epc: 'D6',
+			edt: null
+		}]
+	  };
 
 		this.sendPacket(address, packet).then(() => {
 			// Do nothing
@@ -2110,14 +2114,14 @@ Device.prototype._isSameEojList = function (r1, r2) {
 Device.prototype._getRemoteDeviceId = function (address) {
 	let promise = new Promise((resolve, reject) => {
 		let packet = {
-			seoj: this._controller_eoj,
-			deoj: '0EF001',
-			esv: '62',
-			properties: [{
-				epc: '83',
-				edt: null
-			}]
-		};
+		  seoj: this._controller_eoj,
+		  deoj: '0EF001',
+		  esv: '62',
+		  properties: [{
+			epc: '83',
+			edt: null
+		}]
+	  };
 		this._request(address, packet).then((res) => {
 			if (res['result'] === 0) {
 				let prop = res['data']['data']['properties'][0];
@@ -2166,10 +2170,10 @@ Device.prototype._getRemoteDeviceEojPropertyMaps = function (address, eoj, callb
 	let epc_list = ['9F', '9E', '9D']; // Get, Set, Inf プロパティマップの EPC
 	let key_list = ['get', 'set', 'inf'];
 	let map = {
-		get: [],
-		set: [],
-		inf: []
-	};
+	  get: [],
+	  set: [],
+	  inf: []
+  };
 	let getPropertyMap = (cb) => {
 		let epc = epc_list.shift();
 		if (!epc) {
@@ -2180,15 +2184,15 @@ Device.prototype._getRemoteDeviceEojPropertyMaps = function (address, eoj, callb
 					let epc = d['epc'];
 					if (!props[epc]) {
 						props[epc] = {
-							epc: epc,
-							propertyName: d['propertyName'],
-							map: {
-								get: false,
-								set: false,
-								inf: false
-							},
-							edt: null
-						}
+						  epc: epc,
+						  propertyName: d['propertyName'],
+						  map: {
+							get: false,
+							set: false,
+							inf: false
+						},
+						  edt: null
+					  }
 
 					}
 					props[epc]['map'][k] = true;
@@ -2206,14 +2210,14 @@ Device.prototype._getRemoteDeviceEojPropertyMaps = function (address, eoj, callb
 		let key = key_list.shift();
 
 		let packet = {
-			seoj: this._controller_eoj,
-			deoj: eoj,
-			esv: '62',
-			properties: [{
-				epc: epc,
-				edt: null
-			}]
-		};
+		  seoj: this._controller_eoj,
+		  deoj: eoj,
+		  esv: '62',
+		  properties: [{
+			epc: epc,
+			edt: null
+		}]
+	  };
 		this._request(address, packet).then((parsed) => {
 			let prop = parsed['data']['data']['properties'][0];
 			if (prop && prop['epc']['hex'] === epc && prop['edt']['data'] && prop['edt']['data']['propertyList']) {
@@ -2258,14 +2262,14 @@ Device.prototype._getRemoteDeviceReleases = function (address, eoj_list) {
 
 			let epc = '82';
 			let packet = {
-				seoj: this._controller_eoj,
-				deoj: eoj,
-				esv: '62',
-				properties: [{
-					epc: epc,
-					edt: null
-				}]
-			};
+			  seoj: this._controller_eoj,
+			  deoj: eoj,
+			  esv: '62',
+			  properties: [{
+				epc: epc,
+				edt: null
+			}]
+		  };
 			this._request(address, packet).then((parsed) => {
 				let prop = parsed['data']['data']['properties'][0];
 				if (prop && prop['epc']['hex'] === epc && prop['edt']['data'] && prop['edt']['data']['release']) {
@@ -2299,26 +2303,26 @@ Device.prototype._getRemoteDeviceManufacturerCodes = function (address, eoj_list
 
 			let epc = '8A';
 			let packet = {
-				seoj: this._controller_eoj,
-				deoj: eoj,
-				esv: '62',
-				properties: [{
-					epc: epc,
-					edt: null
-				}]
-			};
+			  seoj: this._controller_eoj,
+			  deoj: eoj,
+			  esv: '62',
+			  properties: [{
+				epc: epc,
+				edt: null
+			}]
+		  };
 			this._request(address, packet).then((parsed) => {
 				let prop = parsed['data']['data']['properties'][0];
 				if (prop && prop['epc']['hex'] === epc && prop['edt']['data'] && prop['edt']['data']['manufacturerName']) {
 					manus[eoj] = {
-						code: prop['edt']['hex'],
-						name: prop['edt']['data']['manufacturerName']
-					};
+					  code: prop['edt']['hex'],
+					  name: prop['edt']['data']['manufacturerName']
+				  };
 				} else {
 					manus[eoj] = {
-						code: prop['edt']['hex'],
-						name: ''
-					};
+					  code: prop['edt']['hex'],
+					  name: ''
+				  };
 				}
 				setTimeout(() => {
 					getManufacturerCode();
@@ -2392,69 +2396,69 @@ Device.prototype._request = function (address, packet, release) {
 
 /* ------------------------------------------------------------------
 * getRemoteDeviceList()
-* 現時点で認識しているリモートデバイス情報のリストを返す
-*
-* 引数:
-*   なし
-*
-* 戻値:
-*   以下のプロパティを含んだハッシュオブジェクト
-*
-*   result           | Integer | 0 なら成功、1 なら失敗
-*   code             | Integer | HTTP ステータスコード
-*                    |         | - 200 : 成功
-*                    |         | - 403 : コントローラーでない
-*   message          | String  | 失敗の場合に理由がセットされる。成功時は null。
-*   remoteDeviceList | Array   | リモートデバイスの情報を格納した配列
-*                    |         | 失敗時は null がセットされる
-*
-* リモートデバイスの情報は以下のハッシュオブジェクト:
-*  {
-*    "address": "192.168.11.4", // IP アドレス
-*    "id": "FE00001BF0761C95FB1800000000000000", // 識別番号
-*    "eojList: [
-*      {
-*        "eoj": "0EF001",
-*        "className": {
-*          "ja": "ノードプロファイル",
-*          "en": "Node Profile"
-*        },
-*        "manufacturer": {
-*          "code": "00001B",
-*          "name": {
-*            "ja": "東芝ライテック株式会社",
-*            "en": "Toshiba Lighting & Technology Corporation"
-*        },
-*        "release": "J",
-*        "elProperties": [
-*          {
-*            "epc": "80",
-*            "propertyName": {
-*              "ja": "動作状態",
-*              "en": "Operation status"
-*            },
-*            "map": {
-*              "get": true,
-*              "set": false,
-*              "inf": true
-*            },
-*            edt: null
-*          },
-*          ...
-*        ]
-*      },
-*      ...
-*    ]
-*  }
+* 現時点で認識しているリモートデバイス情報のリストを返す*
+**
+* 引数:*
+*   なし*
+**
+* 戻値:*
+*   以下のプロパティを含んだハッシュオブジェクト*
+**
+*   result           | Integer | 0 なら成功、1 なら失敗*
+*   code             | Integer | HTTP ステータスコード*
+*                    |         | - 200 : 成功*
+*                    |         | - 403 : コントローラーでない*
+*   message          | String  | 失敗の場合に理由がセットされる。成功時は null。*
+*   remoteDeviceList | Array   | リモートデバイスの情報を格納した配列*
+*                    |         | 失敗時は null がセットされる*
+**
+* リモートデバイスの情報は以下のハッシュオブジェクト:*
+*  {*
+*    "address": "192.168.11.4", // IP アドレス*
+*    "id": "FE00001BF0761C95FB1800000000000000", // 識別番号*
+*    "eojList: [*
+*      {*
+*        "eoj": "0EF001",*
+*        "className": {*
+*          "ja": "ノードプロファイル",*
+*          "en": "Node Profile"*
+*        },*
+*        "manufacturer": {*
+*          "code": "00001B",*
+*          "name": {*
+*            "ja": "東芝ライテック株式会社",*
+*            "en": "Toshiba Lighting & Technology Corporation"*
+*        },*
+*        "release": "J",*
+*        "elProperties": [*
+*          {*
+*            "epc": "80",*
+*            "propertyName": {*
+*              "ja": "動作状態",*
+*              "en": "Operation status"*
+*            },*
+*            "map": {*
+*              "get": true,*
+*              "set": false,*
+*              "inf": true*
+*            },*
+*            edt: null*
+*          },*
+*          ...*
+*        ]*
+*      },*
+*      ...*
+*    ]*
+*  }*
 * ---------------------------------------------------------------- */
 Device.prototype.getRemoteDeviceList = function () {
 	if (!this._is_controller) {
 		return {
-			result: 1,
-			code: 403,
-			message: 'This method is available only when this emulator is set as a EL Controller.',
-			remoteDeviceList: null
-		};
+		  result: 1,
+		  code: 403,
+		  message: 'This method is available only when this emulator is set as a EL Controller.',
+		  remoteDeviceList: null
+	  };
 	}
 	let list = [];
 	Object.keys(this._remote_devices).forEach((address) => {
@@ -2464,113 +2468,113 @@ Device.prototype.getRemoteDeviceList = function () {
 		}
 	});
 	return {
-		result: 0,
-		code: 200,
-		message: null,
-		remoteDeviceList: JSON.parse(JSON.stringify(list))
-	};
+	  result: 0,
+	  code: 200,
+	  message: null,
+	  remoteDeviceList: JSON.parse(JSON.stringify(list))
+  };
 };
 
 /* ------------------------------------------------------------------
 * deleteRemoteDeviceList()
-* 現時点で認識しているリモートデバイス情報のリストをクリアする
-*
-* 引数:
-*   なし
-*
-* 戻値:
-*   以下のプロパティを含んだハッシュオブジェクト
-*
-*   result           | Integer | 0 なら成功、1 なら失敗
-*   code             | Integer | HTTP ステータスコード
-*                    |         | - 200 : 成功
-*                    |         | - 403 : コントローラーでない
-*   message          | String  | 失敗の場合に理由がセットされる。成功時は null。
+* 現時点で認識しているリモートデバイス情報のリストをクリアする*
+**
+* 引数:*
+*   なし*
+**
+* 戻値:*
+*   以下のプロパティを含んだハッシュオブジェクト*
+**
+*   result           | Integer | 0 なら成功、1 なら失敗*
+*   code             | Integer | HTTP ステータスコード*
+*                    |         | - 200 : 成功*
+*                    |         | - 403 : コントローラーでない*
+*   message          | String  | 失敗の場合に理由がセットされる。成功時は null。*
 * ---------------------------------------------------------------- */
 Device.prototype.deleteRemoteDeviceList = function () {
 	if (!this._is_controller) {
 		return {
-			result: 1,
-			code: 403,
-			message: 'This method is available only when this emulator is set as a EL Controller.',
-			remoteDeviceList: null
-		};
+		  result: 1,
+		  code: 403,
+		  message: 'This method is available only when this emulator is set as a EL Controller.',
+		  remoteDeviceList: null
+	  };
 	}
 
 	Object.keys(this._remote_devices).forEach((addr) => {
 		this.ondisappeared({
-			address: addr,
-			id: this._remote_devices[addr]['id']
-		});
+		  address: addr,
+		  id: this._remote_devices[addr]['id']
+	  });
 	});
 
 	this._remote_devices = {};
 
 	return {
-		result: 0,
-		code: 200,
-		message: null
-	};
+	  result: 0,
+	  code: 200,
+	  message: null
+  };
 };
 
 /* ------------------------------------------------------------------
 * sendDiscoveryPacket()
-* 機器発見パケットを送信する
-*
-* 引数:
-*   なし
-*
-* 戻値:
-*   Promise オブジェクト
-*
-*   resolve() には以下のプロパティを含んだハッシュオブジェクトが引き渡される
-*
-*   result  | Integer | 0 なら成功、1 なら失敗
-*   code    | Integer | HTTP ステータスコード (403 or 500)
-*           |         | - 200 : 成功
-*           |         | - 403 : コントローラーでない
-*           |         | - 500 : UDP パケット送信失敗
-*   message | String  | 失敗の場合に理由がセットされる。成功時は null。
-*
-*   reject() が呼び出されることはない。
+* 機器発見パケットを送信する*
+**
+* 引数:*
+*   なし*
+**
+* 戻値:*
+*   Promise オブジェクト*
+**
+*   resolve() には以下のプロパティを含んだハッシュオブジェクトが引き渡される*
+**
+*   result  | Integer | 0 なら成功、1 なら失敗*
+*   code    | Integer | HTTP ステータスコード (403 or 500)*
+*           |         | - 200 : 成功*
+*           |         | - 403 : コントローラーでない*
+*           |         | - 500 : UDP パケット送信失敗*
+*   message | String  | 失敗の場合に理由がセットされる。成功時は null。*
+**
+*   reject() が呼び出されることはない。*
 * ---------------------------------------------------------------- */
 Device.prototype.sendDiscoveryPacket = function () {
 	let promise = new Promise((resolve, reject) => {
 		if (!this._is_controller) {
 			resolve({
-				result: 1,
-				code: 403,
-				message: 'This method is available only when this emulator is set as a EL Controller.'
-			});
+			  result: 1,
+			  code: 403,
+			  message: 'This method is available only when this emulator is set as a EL Controller.'
+		  });
 			return;
 		}
 
 		// Node profile に対して
 		// 自ノードインスタンスリストS (EPC: 0xD6) Get を送信
 		let packet = {
-			seoj: this._controller_eoj,
-			deoj: '0EF000',
-			esv: '62',
-			properties: [{
-				epc: 'D6',
-				edt: null
-			}]
-		};
+		  seoj: this._controller_eoj,
+		  deoj: '0EF000',
+		  esv: '62',
+		  properties: [{
+			epc: 'D6',
+			edt: null
+		}]
+	  };
 
 		this.sendPacket(null, packet).then((parsed) => {
 			setTimeout(() => {
 				resolve({
-					result: 0,
-					code: 200,
-					message: null
-				});
+				  result: 0,
+				  code: 200,
+				  message: null
+			  });
 			}, 1000);
 		}).catch((error) => {
 			resolve({
-				result: 1,
-				code: 500,
-				message: error.message
-			});
+			  result: 1,
+			  code: 500,
+			  message: error.message
+		  });
 		});
 	});
 	return promise;
@@ -2578,76 +2582,76 @@ Device.prototype.sendDiscoveryPacket = function () {
 
 /* ------------------------------------------------------------------
 * getRemoteDeviceEpcData(address, eoj, epc)
-* リモートデバイスの EPC データ (EDT) を取得する
-*
-* 引数:
-* - address  | String  | required |
-*     - リモートデバイスの IP アドレス (例: "192.168.11.4")
-* - eoj      | String  | required |
-*     - リモートデバイスの EOJ (例: "013001")
-* - epc      | String   | required |
-*     - リモートデバイスの EPC (例: "80")
-*
-* 戻値:
-*   Promise オブジェクト
-*
-*   resolve() には以下のプロパティを含んだハッシュオブジェクトが引き渡される
-*
-*   result   | Integer | 0 なら成功、1 なら失敗
-*   code     | Integer | HTTP ステータスコード (403 or 500)
-*            |         | - 200 : 成功
-*            |         | - 400 : パラメーターエラー
-*            |         | - 403 : コントローラーでない
-*            |         | - 500 : UDP パケット送信失敗
-*   message  | String  | 失敗の場合に理由がセットされる。成功時は null。
-*   elProperty | Object  | パケットの解析結果
-*
-*   reject() が呼び出されることはない。
+* リモートデバイスの EPC データ (EDT) を取得する*
+**
+* 引数:*
+* - address  | String  | required |*
+*     - リモートデバイスの IP アドレス (例: "192.168.11.4")*
+* - eoj      | String  | required |*
+*     - リモートデバイスの EOJ (例: "013001")*
+* - epc      | String   | required |*
+*     - リモートデバイスの EPC (例: "80")*
+**
+* 戻値:*
+*   Promise オブジェクト*
+**
+*   resolve() には以下のプロパティを含んだハッシュオブジェクトが引き渡される*
+**
+*   result   | Integer | 0 なら成功、1 なら失敗*
+*   code     | Integer | HTTP ステータスコード (403 or 500)*
+*            |         | - 200 : 成功*
+*            |         | - 400 : パラメーターエラー*
+*            |         | - 403 : コントローラーでない*
+*            |         | - 500 : UDP パケット送信失敗*
+*   message  | String  | 失敗の場合に理由がセットされる。成功時は null。*
+*   elProperty | Object  | パケットの解析結果*
+**
+*   reject() が呼び出されることはない。*
 * ---------------------------------------------------------------- */
 Device.prototype.getRemoteDeviceEpcData = function (address, eoj, epc) {
 	let promise = new Promise((resolve, reject) => {
 		if (!this._is_controller) {
 			resolve({
-				result: 1,
-				code: 403,
-				message: 'This method is available only when this emulator is set as a EL Controller.'
-			});
+			  result: 1,
+			  code: 403,
+			  message: 'This method is available only when this emulator is set as a EL Controller.'
+		  });
 			return;
 		}
 
 		if (!address || typeof (address) !== 'string') {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `address` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `address` is invalid.'
+		  });
 			return;
 		}
 
 		if (!this._remote_devices[address]) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The specified `address` is unknown.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The specified `address` is unknown.'
+		  });
 			return;
 		}
 
 		if (!eoj || typeof (eoj) !== 'string' || !/^[0-9A-F]{6}$/.test(eoj)) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `eoj` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `eoj` is invalid.'
+		  });
 			return;
 		}
 
 		if (!epc || typeof (epc) !== 'string' || !/^[0-9A-F]{2}$/.test(epc)) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `epc` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `epc` is invalid.'
+		  });
 			return;
 		}
 
@@ -2661,14 +2665,14 @@ Device.prototype.getRemoteDeviceEpcData = function (address, eoj, epc) {
 
 		// リクエストパケット
 		let packet = {
-			seoj: this._controller_eoj,
-			deoj: eoj,
-			esv: '62',
-			properties: [{
-				epc: epc,
-				edt: null
-			}]
-		};
+		  seoj: this._controller_eoj,
+		  deoj: eoj,
+		  esv: '62',
+		  properties: [{
+			epc: epc,
+			edt: null
+		}]
+	  };
 
 		this._request(address, packet, release).then((parsed) => {
 			if (parsed['result'] === 0) {
@@ -2699,31 +2703,31 @@ Device.prototype.getRemoteDeviceEpcData = function (address, eoj, epc) {
 						}
 
 						resolve({
-							result: 0,
-							code: 200,
-							message: null,
-							elProperty: prop
-						});
+						  result: 0,
+						  code: 200,
+						  message: null,
+						  elProperty: prop
+					  });
 					} else {
 						resolve({
-							result: 1,
-							code: 400,
-							message: 'The EPC data was not found in the response.'
-						});
+						  result: 1,
+						  code: 400,
+						  message: 'The EPC data was not found in the response.'
+					  });
 					}
 				} else {
 					resolve({
-						result: 1,
-						code: 400,
-						message: 'The ESV of the response is not 0x72 (GET_RES): 0x' + d['esv']['hex']
-					});
+					  result: 1,
+					  code: 400,
+					  message: 'The ESV of the response is not 0x72 (GET_RES): 0x' + d['esv']['hex']
+				  });
 				}
 			} else {
 				resolve({
-					result: 1,
-					code: 400,
-					message: parsed['message']
-				});
+				  result: 1,
+				  code: 400,
+				  message: parsed['message']
+			  });
 			}
 		}).catch((error) => {
 			reject(error);
@@ -2735,119 +2739,119 @@ Device.prototype.getRemoteDeviceEpcData = function (address, eoj, epc) {
 
 /* ------------------------------------------------------------------
 * setRemoteDeviceEpcData(address, eoj, epc, edt)
-* リモートデバイスの EPC データ (EDT) をセットする
-* 実際には SetC を送信して Set_Res を受けてから、Get を送信して Get_Res の結果を返す
-*
-* 引数:
-* - address  | String  | required |
-*     - リモートデバイスの IP アドレス (例: "192.168.11.4")
-* - eoj      | String  | required |
-*     - リモートデバイスの EOJ (例: "013001")
-* - epc      | String   | required |
-*     - リモートデバイスの EPC (例: "80")
-* - edt      | String   | required |
-*     - セットしたい EDT の 16 進数文字列 (例: "41")
-*
-* 戻値:
-*   Promise オブジェクト
-*
-*   resolve() には以下のプロパティを含んだハッシュオブジェクトが引き渡される
-*
-*   result   | Integer | 0 なら成功、1 なら失敗
-*   code     | Integer | HTTP ステータスコード (403 or 500)
-*            |         | - 200 : 成功
-*            |         | - 400 : パラメーターエラー
-*            |         | - 403 : コントローラーでない
-*            |         | - 500 : UDP パケット送信失敗
-*   message  | String  | 失敗の場合に理由がセットされる。成功時は null。
-*   property | Object  | パケットの解析結果
-*
-*   reject() が呼び出されることはない。
+* リモートデバイスの EPC データ (EDT) をセットする*
+* 実際には SetC を送信して Set_Res を受けてから、Get を送信して Get_Res の結果を返す*
+**
+* 引数:*
+* - address  | String  | required |*
+*     - リモートデバイスの IP アドレス (例: "192.168.11.4")*
+* - eoj      | String  | required |*
+*     - リモートデバイスの EOJ (例: "013001")*
+* - epc      | String   | required |*
+*     - リモートデバイスの EPC (例: "80")*
+* - edt      | String   | required |*
+*     - セットしたい EDT の 16 進数文字列 (例: "41")*
+**
+* 戻値:*
+*   Promise オブジェクト*
+**
+*   resolve() には以下のプロパティを含んだハッシュオブジェクトが引き渡される*
+**
+*   result   | Integer | 0 なら成功、1 なら失敗*
+*   code     | Integer | HTTP ステータスコード (403 or 500)*
+*            |         | - 200 : 成功*
+*            |         | - 400 : パラメーターエラー*
+*            |         | - 403 : コントローラーでない*
+*            |         | - 500 : UDP パケット送信失敗*
+*   message  | String  | 失敗の場合に理由がセットされる。成功時は null。*
+*   property | Object  | パケットの解析結果*
+**
+*   reject() が呼び出されることはない。*
 * ---------------------------------------------------------------- */
 Device.prototype.setRemoteDeviceEpcData = function (address, eoj, epc, edt) {
 	let promise = new Promise((resolve, reject) => {
 		if (!this._is_controller) {
 			resolve({
-				result: 1,
-				code: 403,
-				message: 'This method is available only when this emulator is set as a EL Controller.'
-			});
+			  result: 1,
+			  code: 403,
+			  message: 'This method is available only when this emulator is set as a EL Controller.'
+		  });
 			return;
 		}
 
 		if (!address || typeof (address) !== 'string') {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `address` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `address` is invalid.'
+		  });
 			return;
 		}
 
 		if (!this._remote_devices[address]) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The specified `address` is unknown.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The specified `address` is unknown.'
+		  });
 			return;
 		}
 
 		if (!eoj || typeof (eoj) !== 'string' || !/^[0-9A-F]{6}$/.test(eoj)) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `eoj` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `eoj` is invalid.'
+		  });
 			return;
 		}
 
 		if (!epc || typeof (epc) !== 'string' || !/^[0-9A-F]{2}$/.test(epc)) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `epc` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `epc` is invalid.'
+		  });
 			return;
 		}
 
 		if (!edt || typeof (edt) !== 'string' || !/^[0-9A-F]+$/.test(edt) || edt.length % 2 !== 0) {
 			resolve({
-				result: 1,
-				code: 400,
-				message: 'The `edt` is invalid.'
-			});
+			  result: 1,
+			  code: 400,
+			  message: 'The `edt` is invalid.'
+		  });
 			return;
 		}
 
 		// リクエストパケット
 		let packet = {
-			seoj: this._controller_eoj,
-			deoj: eoj,
-			esv: '61',
-			properties: [{
-				epc: epc,
-				edt: edt
-			}]
-		};
+		  seoj: this._controller_eoj,
+		  deoj: eoj,
+		  esv: '61',
+		  properties: [{
+			epc: epc,
+			edt: edt
+		}]
+	  };
 
 		this._request(address, packet).then((parsed) => {
 			if (parsed['result'] !== 0) {
 				resolve({
-					result: 1,
-					code: 400,
-					message: parsed['message']
-				});
+				  result: 1,
+				  code: 400,
+				  message: parsed['message']
+			  });
 				return;
 			}
 			let d = parsed['data']['data'];
 			let esv = d['esv']['hex'];
 			if (esv !== '71') {
 				resolve({
-					result: 1,
-					code: 400,
-					message: 'The ESV of the response was not 0x71 (SET_RES): 0x' + d['esv']['hex']
-				});
+				  result: 1,
+				  code: 400,
+				  message: 'The ESV of the response was not 0x71 (SET_RES): 0x' + d['esv']['hex']
+			  });
 				return;
 			}
 			return this._waitPromise(300);
