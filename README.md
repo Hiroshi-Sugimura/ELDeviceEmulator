@@ -5,8 +5,8 @@ mac, winは勝手に読み替えて
 # binaryも用意しました。
 
 v 0.9.0
-- !(for Win)[https://www.he.kanagawa-it.ac.jp/~sugimura/program/ELDeviceEmurator%20Setup%200.9.0.exe]
-- !(for mac)[https://www.he.kanagawa-it.ac.jp/~sugimura/program/ELDeviceEmurator-0.9.0.exe]
+- [for Win](https://www.he.kanagawa-it.ac.jp/~sugimura/program/ELDeviceEmurator Setup 0.9.0.exe)
+- (for mac)[https://www.he.kanagawa-it.ac.jp/~sugimura/program/ELDeviceEmurator-0.9.0.exe]
 
 
 # 本体を直接実行
