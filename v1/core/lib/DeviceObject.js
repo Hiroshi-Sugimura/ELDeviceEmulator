@@ -10,7 +10,7 @@ const mDeviceState = require('./DeviceState.js');
 /* ------------------------------------------------------------------
 * Constructor
 * ---------------------------------------------------------------- */
-const DeviceObject = function (eoj, desc, user_init_values, conf, ip_address_utils, standard_version, parser, eoj_settings) {
+const DeviceObject = function (eoj, desc, user_init_values, conf, ip_address_utils, standard_version, parser, eoj_settings, configDir) {
 	this._eoj = eoj;
 	this._desc = JSON.parse(JSON.stringify(desc));
 	this._user_init_values = user_init_values || {};
@@ -19,6 +19,7 @@ const DeviceObject = function (eoj, desc, user_init_values, conf, ip_address_uti
 	this._standard_version = standard_version;
 	this._parser = parser;
 	this._eoj_settings = eoj_settings || {};
+	this._configDir = configDir;
 
 	this._states = null; // DeviceState オブジェクトのインスタンス
 
@@ -39,6 +40,7 @@ DeviceObject.prototype.updateConf = function (conf) {
 * 初期化する
 * ---------------------------------------------------------------- */
 DeviceObject.prototype.init = function () {
+
 	// DeviceState オブジェクトを生成
 	this._states = new mDeviceState(
 		this._eoj,
@@ -46,7 +48,8 @@ DeviceObject.prototype.init = function () {
 		this._user_init_values,
 		this._standard_version,
 		this._parser,
-		this._eoj_settings
+		this._eoj_settings,
+		this._configDir
 	);
 	this._states.init();
 
@@ -444,7 +447,7 @@ DeviceObject.prototype._getResponseWaitMsec = function (req_packet, epc_list) {
 		} else if (esv === '6E') { // SetGet 書き込み・読み出し要求
 			//return this._conf['set_res_wait_msec'];
 			wait = getWaitMsec('set');
-		} else if (esv === '74') { // INFC 通知：応答要	
+		} else if (esv === '74') { // INFC 通知：応答要
 			//return this._conf['inf_res_wait_msec'];
 			wait = getWaitMsec('inf');
 		}

@@ -1,6 +1,5 @@
 {
 	"name": "ELDeviceEmulator",
-	"version": "0.0.1",
 	"description": "first of all",
 	"scripts": {
 		"win": "set    NODE_ENV=development && electron ./core",

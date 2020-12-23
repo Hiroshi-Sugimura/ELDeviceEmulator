@@ -12,13 +12,14 @@ const mOs = require('os');
 /* ------------------------------------------------------------------
 * Constructor
 * ---------------------------------------------------------------- */
-const DeviceState = function (eoj, desc, user_init_values, standard_version, parser, eoj_settings) {
+const DeviceState = function (eoj, desc, user_init_values, standard_version, parser, eoj_settings, configDir) {
 	this._eoj = eoj;
 	this._desc = desc;
 	this._user_init_values = user_init_values;
 	this._standard_version = standard_version;
 	this._parser = parser;
 	this._eoj_settings = eoj_settings || {};
+	this._configDir = configDir;
 	/*
 this._eoj_settings  = {
   "80": {
@@ -46,7 +47,11 @@ this._eoj_settings  = {
 	this._property_map = {};
 
 	// 状態ファイルのパス
-	this._fpath = mPath.resolve(__dirname, '../data/state_' + eoj + '.json');
+	if( this._configDir ) {
+		this._fpath = mPath.join( this._configDir, 'state_' + eoj + '.json');
+	}else{
+		this._fpath = mPath.resolve(__dirname, '../data/state_' + eoj + '.json');
+	}
 	// 状態ファイルの保存中ロックフラグ
 	this._flock = false;
 	// 状態を保存したハッシュオブジェクト
@@ -1188,7 +1193,7 @@ DeviceState.prototype._setEpcForReset = function (uvals, cvals) {
 	} else if (/^027D/.test(this._eoj)) {
 		// 蓄電池: Storage Battery: 0x027D
 		if (uvals['D7']) {
-			// EPC: 0xD7 積算放電電力量リセット設定	
+			// EPC: 0xD7 積算放電電力量リセット設定
 			// 0xD6 (積算放電電力量計測値) の値を 0 にする
 			let v = '00000000';
 			if (this._states['D6'] !== v) {
@@ -1197,7 +1202,7 @@ DeviceState.prototype._setEpcForReset = function (uvals, cvals) {
 			}
 		}
 		if (uvals['D9']) {
-			// EPC: 0xD9 積算充電電力量リセット設定	
+			// EPC: 0xD9 積算充電電力量リセット設定
 			// 0xD8 (積算充電電力量計測値) の値を 0 にする
 			let v = '00000000';
 			if (this._states['D8'] !== v) {
@@ -1208,7 +1213,7 @@ DeviceState.prototype._setEpcForReset = function (uvals, cvals) {
 	} else if (/^027E/.test(this._eoj)) {
 		// 電気自動車充放電器: EV Charger and Discharger: 0x027E
 		if (uvals['D7']) {
-			// EPC: 0xD7 積算放電電力量リセット設定	
+			// EPC: 0xD7 積算放電電力量リセット設定
 			// 0xD6 (積算放電電力量計測値) の値を 0 にする
 			let v = '00000000';
 			if (this._states['D6'] !== v) {
@@ -1217,7 +1222,7 @@ DeviceState.prototype._setEpcForReset = function (uvals, cvals) {
 			}
 		}
 		if (uvals['D9']) {
-			// EPC: 0xD9 積算充電電力量リセット設定	
+			// EPC: 0xD9 積算充電電力量リセット設定
 			// 0xD8 (積算充電電力量計測値) の値を 0 にする
 			let v = '00000000';
 			if (this._states['D8'] !== v) {
@@ -1228,7 +1233,7 @@ DeviceState.prototype._setEpcForReset = function (uvals, cvals) {
 	} else if (/^02A1/.test(this._eoj)) {
 		// 電気自動車充電器: EV Charger: 0x02A1
 		if (uvals['D9']) {
-			// EPC: 0xD9 積算充電電力量リセット設定	
+			// EPC: 0xD9 積算充電電力量リセット設定
 			// 0xD8 (積算充電電力量計測値) の値を 0 にする
 			let v = '00000000';
 			if (this._states['D8'] !== v) {

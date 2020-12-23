@@ -316,7 +316,8 @@ Device.prototype.init = function (eoj_list) {
 				this._ip_address_utils,
 				release,
 				this._parser,
-				mEojSettings.get(eoj)
+				mEojSettings.get(eoj),
+				this._configDir
 				);
 			devobj.init();
 			this._device_objects[eoj] = devobj;

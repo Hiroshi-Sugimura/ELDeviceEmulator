@@ -8,9 +8,13 @@
 const mFs = require('fs');
 const mPath = require('path');
 
-const UserConf = function (sys_conf) {
+const UserConf = function (sys_conf, configDir) {
 	this._sys_conf = sys_conf;
-	this._fpath = mPath.resolve(__dirname, '../data/user_conf.json');
+	if( configDir ) {
+		this._fpath = mPath.join( configDir, 'user_conf.json');
+	}else{
+		this._fpath = mPath.resolve(__dirname, '../data/user_conf.json');
+	}
 	this._uconf = null;
 	this._UCONF_KEY_LIST = [
 		'lang',
@@ -80,7 +84,7 @@ UserConf.prototype.get = function () {
 *
 * 戻値:
 * - Promise オブジェクト
-* 
+*
 * 指定された設定値が不正な値だったとしても reject() ではなく resolve() を
 * 呼び出す。reject() が呼び出されるのは、ファイル書き込みに失敗したときなど。
 *

@@ -37,7 +37,7 @@ const Emulator = function (configDir) {
 	this._api = null;
 	this._console = new mConsole();
 	this._http = new mHttpServer(this._conf, this._console);
-	this._uconf = new mUserConf(this._conf);
+	this._uconf = new mUserConf(this._conf, this._configDir);
 };
 
 // 初期化
